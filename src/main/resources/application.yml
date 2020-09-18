@@ -1,0 +1,16 @@
+spring:
+  activemq:
+    in-memory: false
+    non-blocking-redelivery: false
+  jms:
+    listener:
+      acknowledge-mode: client
+    template:
+      default-destination:
+      delivery-mode: persistent
+
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
