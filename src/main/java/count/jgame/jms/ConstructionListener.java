@@ -84,7 +84,7 @@ public class ConstructionListener {
 		log.info("ConstructionListener called: {}", observer.toString());
 		try {
 			// retrieve and check game
-			Game game = gameRepository.findById(observer.getGame().getId()).orElse(null);
+			Game game = gameRepository.preloadGame(observer.getGame().getId()).orElse(null);
 			if (null == game) {
 				throw new EntityNotFoundException("game not found");
 			}

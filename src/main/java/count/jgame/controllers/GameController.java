@@ -9,6 +9,7 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,12 +18,14 @@ import count.jgame.exceptions.UnknownProductionRequestException;
 import count.jgame.exceptions.UnknownProductionListException;
 import count.jgame.models.ConstructionRequest;
 import count.jgame.models.ConstructionRequestObserver;
+import count.jgame.models.ConstructionType;
 import count.jgame.models.Game;
 import count.jgame.models.ProductionList;
 import count.jgame.models.ProductionRequest;
 import count.jgame.models.ProductionRequestObserver;
 import count.jgame.models.ShipRequest;
 import count.jgame.models.ShipRequestObserver;
+import count.jgame.models.ShipType;
 import count.jgame.repositories.GameRepository;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +68,34 @@ public class GameController {
 		return repository.save(game);
 	}
 	
+	@PutMapping(path = "/game/{id}", consumes = {MediaType.APPLICATION_JSON_VALUE})
+	@ResponseBody
+	public Game put(
+		@PathVariable("id") Long id,
+		@RequestBody Game input
+	) {
+		Game game = repository.findById(id).orElse(null);
+		if (game == null) {
+			throw new EntityNotFoundException(String.format("game not found : %d", id));
+		}
+		
+		for (ShipType t : ShipType.values()) {
+			if (!game.getShips().containsKey(t)) {
+				game.getShips().put(t, 0);
+			}
+		}
+
+		for (ConstructionType t : ConstructionType.values()) {
+			if (!game.getConstructions().containsKey(t)) {
+				game.getConstructions().put(t, 0);
+			}
+		}
+		
+		game.setPlayer(input.getPlayer());
+		
+		return repository.save(game);
+	}
+	
 	@PostMapping(path = "/game/{id}/production/{listName}")
 	@ResponseBody
 	public Game pushToProd(
@@ -84,7 +115,7 @@ public class GameController {
 		String queueName = null;
 		
 		if (productionRequest instanceof ShipRequest) {
-			Double unitLeadTime = 5.0 * (((ShipRequest) productionRequest).getType().ordinal() + 1);
+			Double unitLeadTime = 1.0 * (((ShipRequest) productionRequest).getType().ordinal() + 1);
 			
 			observer = new ShipRequestObserver(
 				(ShipRequest) productionRequest,
@@ -93,7 +124,7 @@ public class GameController {
 			
 			queueName = this.SHIPYARD_QUEUE_NAME;
 		} else if (productionRequest instanceof ConstructionRequest) {
-			Double unitLeadTime = 12.0 * (((ConstructionRequest) productionRequest).getType().ordinal() + 1);
+			Double unitLeadTime = 1.0 * (((ConstructionRequest) productionRequest).getType().ordinal() + 1);
 			observer = new ConstructionRequestObserver(
 				(ConstructionRequest) productionRequest,
 				unitLeadTime

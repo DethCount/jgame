@@ -45,22 +45,24 @@ public class Game {
 	@Column
 	Long score = 0l;
 	
-	@ElementCollection(fetch = FetchType.EAGER)
+	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(
 		name = "game_ships", 
 		joinColumns = {@JoinColumn(name = "id_game", referencedColumnName = "id")}
 	)
 	@MapKeyColumn(name = "type")
 	@Column(name = "nb")
+	@OrderBy("type ASC")
 	Map<ShipType,Integer> ships = new HashMap<>();
 
-	@ElementCollection(fetch = FetchType.EAGER)
+	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(
 		name = "game_constructions", 
 		joinColumns = {@JoinColumn(name = "id_game", referencedColumnName = "id")}
 	)
 	@MapKeyColumn(name = "type")
 	@Column(name = "level")
+	@OrderBy("type ASC")
 	Map<ConstructionType,Integer> constructions = new HashMap<>();
 	
 	@OneToMany(mappedBy = "game")
@@ -127,6 +129,21 @@ public class Game {
 
 	public void setConstructionProduction(List<ConstructionRequestObserver> constructionProduction) {
 		this.constructionProduction = constructionProduction;
+	}
+	
+	public Game()
+	{
+		for (ShipType t : ShipType.values()) {
+			if (!this.getShips().containsKey(t)) {
+				this.getShips().put(t, 0);
+			}
+		}
+
+		for (ConstructionType t : ConstructionType.values()) {
+			if (!this.getConstructions().containsKey(t)) {
+				this.getConstructions().put(t, 0);
+			}
+		}
 	}
 
 	@Override
