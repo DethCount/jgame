@@ -1,7 +1,10 @@
 spring:
   activemq:
-    in-memory: false
+    in-memory: true
     non-blocking-redelivery: false
+    broker-url: vm://localhost?broker.schedulerSupport=true&broker.deleteAllMessagesOnStartup=true
+  jpa:
+    show-sql: true
   jms:
     listener:
       acknowledge-mode: client
@@ -11,6 +14,25 @@ spring:
 
 logging:
   level:
-    org:
-      springframework:
-        web: DEBUG
+    count: DEBUG
+    org.springframework: INFO
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+jgame:
+  jms:
+    constructions:
+      destination: Constructions
+      retryFailed: false
+      failedDestination: Constructions_FAILED
+      minDelay: 100
+      retryDelay: 1000
+      failedDelay: 2000
+    shipyard:
+      destination: Shipyard
+      retryFailed: false
+      failedDestination: Shipyard_FAILED
+      minDelay: 100
+      retryDelay: 1000
+      failedDelay: 2000

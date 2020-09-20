@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
 
@@ -59,15 +60,17 @@ public class Game {
 		joinColumns = {@JoinColumn(name = "id_game", referencedColumnName = "id")}
 	)
 	@MapKeyColumn(name = "type")
-	@Column(name = "nb")
+	@Column(name = "level")
 	Map<ConstructionType,Integer> constructions = new HashMap<>();
 	
 	@OneToMany(mappedBy = "game")
-	@Where(clause = "status = 'Running'")
+	@Where(clause = "status IN ('Running', 'Waiting')")
+	@OrderBy("id ASC")
 	List<ShipRequestObserver> shipProduction;
 	
 	@OneToMany(mappedBy = "game")
-	@Where(clause = "status = 'Running'")
+	@Where(clause = "status IN ('Running', 'Waiting')")
+	@OrderBy("id ASC")
 	List<ConstructionRequestObserver> constructionProduction;
 
 	public Long getId() {

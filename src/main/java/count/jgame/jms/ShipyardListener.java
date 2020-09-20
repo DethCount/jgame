@@ -1,24 +1,38 @@
 package count.jgame.jms;
 
 import java.util.Date;
+import java.util.List;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.persistence.EntityNotFoundException;
 
+import org.apache.activemq.ScheduledMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.stereotype.Component;
 
 import count.jgame.models.Game;
+import count.jgame.models.ProductionRequestStatus;
 import count.jgame.models.ShipRequestObserver;
+import count.jgame.models.ShipType;
 import count.jgame.repositories.GameRepository;
 import count.jgame.repositories.ShipRequestObserverRepository;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class ShipyardListener {
-	static final String DESTINATION = "Shipyard";
-	static final String FAILED_DESTINATION = "Shipyard_FAILED";
+	final String DESTINATION;
+	final String FAILED_DESTINATION;
+	final Boolean RETRY_FAILED;
+	final Integer MIN_DELAY;
+	final Integer RETRY_DELAY;
+	final Integer FAILED_DELAY;
 	
 	@Autowired
 	GameRepository gameRepository;
@@ -29,80 +43,170 @@ public class ShipyardListener {
 	@Autowired
 	JmsTemplate jmsTemplate;
 	
-	@JmsListener(destination = DESTINATION)
+	ShipyardListener(
+		@Value("${jgame.jms.shipyard.destination:Shipyard}")
+		String destination,
+		@Value("${jgame.jms.shipyard.failedDestination:Shipyard_FAILED}")
+		String failedDestination,
+		@Value("${jgame.jms.shipyard.retryFailed:false}")
+		Boolean retryFailed,
+		@Value("${jgame.jms.shipyard.minDelay:100}")
+		Integer minDelay,
+		@Value("${jgame.jms.shipyard.retryDelay:1000}")
+		Integer retryDelay,
+		@Value("${jgame.jms.shipyard.failedDelay:2000}")
+		Integer failedDelay
+	) {
+		DESTINATION = destination;
+		FAILED_DESTINATION = failedDestination;
+		RETRY_FAILED = retryFailed;
+		MIN_DELAY = minDelay;
+		RETRY_DELAY = retryDelay;
+		FAILED_DELAY = failedDelay;
+	}
+	
+	@JmsListener(destination = "${jgame.jms.shipyard.destination:Shipyard}")
 	void handleRequest(ShipRequestObserver observer) {
-		System.out.println("ShipyardListener called" + observer.toString());
+		log.info("ShipyardListener called: {}", observer.toString());
 		try {
-			Game game = observer.getGame();
+			// retrieve and check game
+			Game game = gameRepository.findById(observer.getGame().getId()).orElse(null);
 			if (null == game) {
 				throw new EntityNotFoundException("game not found");
 			}
 			
-			if (null == observer.getStartedAt()) {
-				observer.start();
-				retry(DESTINATION, observer);
+			// make sure observer is in db
+			if (null == observer.getId()) {
+				observerRepository.saveAndFlush(observer);
+			}
+
+			// wait for existing constructions for this game
+			
+			List<ShipRequestObserver> currentProduction = observerRepository
+				.findBlockingObservers(
+					new ProductionRequestStatus[] {
+						ProductionRequestStatus.Running, 
+						ProductionRequestStatus.Waiting
+					}, 
+					game,
+					observer.getId()
+				);
+			
+			log.debug("prod en cours: {}, observer: {}", currentProduction.size(), observer.getId());
+			
+			if (currentProduction.size() > 0) {
+				log.info("waiting: {}", observer.getId());
+				observer.waiting();
+				retry(observer, (int)(observer.getUnitLeadTime() * 1000));
 				return;
 			}
 			
+			// if not started, start and retry after construction
+			
+			if (null == observer.getStartedAt()) {
+				observer.start();
+				log.info("start and sleep: {}", observer.getId());
+				retry(observer, (int)(observer.getUnitLeadTime() * 1000));
+				return;
+			}
+			
+			// check if construction should have been done
+			
 			Date now = new Date();
 			
-			Integer shouldHaveDone = (int)(
-				((now.getTime() - observer.getStartedAt().getTime()) / 1000.0)
-					/ observer.getUnitLeadTime()
-			);
+			Integer shouldHaveDone 
+				= Math.min(
+					observer.getRequest().getNb(),
+					(int)(
+						((now.getTime() - observer.getStartedAt().getTime()) / 1000.0)
+						/ observer.getUnitLeadTime()
+					)
+				)
+				- observer.getNbDone();
 			
-			System.out.println("shouldHaveDone: " + shouldHaveDone);
+			log.debug("shouldHaveDone: {}", shouldHaveDone);
 			
-			int produced = shouldHaveDone - observer.getNbDone();
-			if (produced > 0 && produced + observer.getNbDone() <= observer.getRequest().getNb()) {
-				System.out.println("produced: " + produced);
-				if (!game.getShips().containsKey(observer.getRequest().getType())) {
-					game.getShips().put(observer.getRequest().getType(), produced);
-				} else {
-					game.getShips().put(
-						observer.getRequest().getType(), 
-						game.getShips().get(observer.getRequest().getType())
-							+ produced
-					);
+			if (shouldHaveDone > 0) {
+				// update game with new construction
+				this.produce(game, observer, shouldHaveDone);
+				
+				if (observer.getFinishedAt() == null) {
+					retry(observer, (int)(observer.getUnitLeadTime() * 1000));
 				}
-				
-				gameRepository.saveAndFlush(game);
-				
-				observer.setNbDone(observer.getNbDone() + produced);
+			} else {
+				// retry in 1/10th of lead time
+				retry(observer, (int)(observer.getUnitLeadTime() * 100));
 			}
-			
-			finish(DESTINATION, observer);
 		} catch(Exception e) {
+			log.error("error: {}: {}", e.getClass().getSimpleName(), e.getMessage());
 			e.printStackTrace(System.err);
 			observer.fail();
-			observerRepository.saveAndFlush(observer);
-			if (observer.getNbDone() < observer.getRequest().getNb()) {
-				retry(FAILED_DESTINATION, observer);
-			}
+			retryFailed(observer);
 		} finally {
-			System.out.println("ShipyardListener end: " + observer.toString());
+			log.debug("ShipyardListener end: {}", observer.toString());
 		}
 	}
 	
-	void retry(String destination, ShipRequestObserver observer) throws JmsException {
-		System.out.println("retry to " + destination);
-		try {
-			Thread.sleep(1000);
-		} catch(Exception e) {
-			e.printStackTrace(System.out);
-		}
+	void retry(ShipRequestObserver observer, String destination, Integer delay) 
+		throws JmsException 
+	{
+		delay = Math.max(MIN_DELAY, delay);
+		log.debug("retry {} to {} in {}", observer.getId(), destination, delay);
+		observerRepository.saveAndFlush(observer);
 		
-		jmsTemplate.convertAndSend(destination, observer);
+		final long finalDelay = delay;
+		jmsTemplate.convertAndSend(destination, observer, new MessagePostProcessor() {
+			
+			@Override
+			public Message postProcessMessage(Message message) throws JMSException {
+				message.setLongProperty(
+					ScheduledMessage.AMQ_SCHEDULED_DELAY,
+					finalDelay
+				);
+				
+			    return message;
+			}
+		});
 	}
 	
-	void finish(String destination, ShipRequestObserver observer) {
-		if (observer.getNbDone() < observer.getRequest().getNb()) {
-			observerRepository.saveAndFlush(observer);
-			retry(destination, observer);
+	void retry(ShipRequestObserver observer, Integer delay)
+	{
+		this.retry(observer, DESTINATION, delay);
+	}
+	
+	void retry(ShipRequestObserver observer)
+	{
+		this.retry(observer, DESTINATION, RETRY_DELAY);
+	}
+
+	void retryFailed(ShipRequestObserver observer)
+	{
+		if (!this.RETRY_FAILED) {
 			return;
 		}
 		
-		observer.finish();
+		this.retry(observer, FAILED_DESTINATION, FAILED_DELAY);
+	}
+	
+	void produce(Game game, ShipRequestObserver observer, Integer nbProduced)
+	{
+		ShipType type = observer.getRequest().getType();
+		Integer nb = nbProduced;
+		
+		if (game.getShips().containsKey(type)) {
+			nb += game.getShips().get(type);
+		}
+
+		log.info("now owns {} {} ship(s)", nb, type.name());
+		
+		game.getShips().put(type, nb);
+		observer.setNbDone(observer.getNbDone() + nbProduced);
+		
+		if (observer.getNbDone() >= observer.getRequest().getNb()) {
+			observer.finish();
+		}
+		
+		gameRepository.saveAndFlush(game);
 		observerRepository.saveAndFlush(observer);
 	}
 }

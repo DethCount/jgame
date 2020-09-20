@@ -30,20 +30,19 @@ public class MySQLConfiguration {
     @Bean
     @Primary
     public LocalContainerEntityManagerFactoryBean mainEntityManager() {
-        LocalContainerEntityManagerFactoryBean em
-          = new LocalContainerEntityManagerFactoryBean();
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource());
-        em.setPackagesToScan(
-          new String[] { "count.jgame.models" });
+        em.setPackagesToScan(new String[] { "count.jgame.models" });
  
-        HibernateJpaVendorAdapter vendorAdapter
-          = new HibernateJpaVendorAdapter();
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
+        
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.hbm2ddl.auto",
-          env.getProperty("jgame.mysql.jpa.hibernate.ddl-auto"));
-        properties.put("hibernate.dialect",
-          env.getProperty("jgame.mysql.jpa.hibernate.dialect"));
+        properties
+        	.put("hibernate.hbm2ddl.auto", env.getProperty("jgame.mysql.jpa.hibernate.ddl-auto"));
+        properties
+        	.put("hibernate.dialect", env.getProperty("jgame.mysql.jpa.hibernate.dialect"));
+        
         em.setJpaPropertyMap(properties);
  
         return em;
@@ -55,8 +54,7 @@ public class MySQLConfiguration {
  
         DriverManagerDataSource dataSource
           = new DriverManagerDataSource();
-        dataSource.setDriverClassName(
-          env.getProperty("jgame.mysql.datasource.driverClassName"));
+        dataSource.setDriverClassName(env.getProperty("jgame.mysql.datasource.driverClassName"));
         dataSource.setUrl(env.getProperty("jgame.mysql.datasource.url"));
         dataSource.setUsername(env.getProperty("jgame.mysql.datasource.username"));
         dataSource.setPassword(env.getProperty("jgame.mysql.datasource.password"));

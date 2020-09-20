@@ -73,24 +73,44 @@ abstract public class ProductionRequestObserver{
 	public void setGame(Game game) {
 		this.game = game;
 	}
+	
+	public void waiting() {
+		this.startedAt = null;
+		this.finishedAt = null;
+		this.status = ProductionRequestStatus.Waiting;
+	}
 
 	public void start() {
 		this.startedAt = new Date();
+		this.finishedAt = null;
 		this.status = ProductionRequestStatus.Running;
 	}
 	
 	public void finish() {
-		this.finishedAt = new Date();
+		Date now = new Date();
+		if (this.startedAt == null) {
+			this.startedAt = now;
+		}
+		this.finishedAt = now;
 		this.status = ProductionRequestStatus.Finished;
 	}
 	
 	public void fail() {
-		this.finishedAt = new Date();
+		Date now = new Date();
+		if (this.startedAt == null) {
+			this.startedAt = now;
+		}
+
+		this.finishedAt = now;
 		this.status = ProductionRequestStatus.Failed;
 	}
 	
 	public void cancel() {
-		this.finishedAt = new Date();
+		Date now = new Date();
+		if (this.startedAt == null) {
+			this.startedAt = now;
+		}
+		this.finishedAt = now;
 		this.status = ProductionRequestStatus.Canceled;
 	}
 }

@@ -1,0 +1,62 @@
+{"properties": [
+  {
+    "name": "jgame.jms.constructions.destination",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.constructions.destination'"
+  },
+  {
+    "name": "jgame.jms.constructions.retryFailed",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.constructions.retryFailed'"
+  },
+  {
+    "name": "jgame.jms.constructions.failedDestination",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.constructions.failedDestination'"
+  },
+  {
+    "name": "jgame.jms.constructions.minDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.constructions.minDelay'"
+  },
+  {
+    "name": "jgame.jms.constructions.retryDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.constructions.retryDelay'"
+  },
+  {
+    "name": "jgame.jms.constructions.failedDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.constructions.failedDelay'"
+  },
+  {
+    "name": "jgame.jms.shipyard.destination",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.shipyard.destination'"
+  },
+  {
+    "name": "jgame.jms.shipyard.retryFailed",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.shipyard.retryFailed'"
+  },
+  {
+    "name": "jgame.jms.shipyard.failedDestination",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.shipyard.failedDestination'"
+  },
+  {
+    "name": "jgame.jms.shipyard.minDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.shipyard.minDelay'"
+  },
+  {
+    "name": "jgame.jms.shipyard.retryDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.shipyard.retryDelay'"
+  },
+  {
+    "name": "jgame.jms.shipyard.failedDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.shipyard.failedDelay'"
+  }
+]}

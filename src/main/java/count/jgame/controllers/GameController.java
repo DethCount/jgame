@@ -22,7 +22,9 @@ import count.jgame.models.ProductionRequestObserver;
 import count.jgame.models.ShipRequest;
 import count.jgame.models.ShipRequestObserver;
 import count.jgame.repositories.GameRepository;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 public class GameController {
 	
@@ -36,8 +38,7 @@ public class GameController {
 	@ResponseBody
 	public Game get(@PathVariable(name = "id") Long id) {
 		Game game = repository.findById(id).orElse(null);
-		System.out.println("Game: id: " + id);
-		System.out.println(game);
+		log.debug("Game: {}", game.toString());		
 		
 		return game;
 	}
@@ -76,11 +77,6 @@ public class GameController {
 			);
 		} else if (productionRequest instanceof ConstructionRequest) {
 			Double unitLeadTime = 12.0 * (((ConstructionRequest) productionRequest).getType().ordinal() + 1);
-			((ConstructionRequest) productionRequest).setLevel(
-				game.getConstructions().containsKey(((ConstructionRequest) productionRequest).getType())
-					? game.getConstructions().get(((ConstructionRequest) productionRequest).getType()) + 1
-					: null
-			);
 			observer = new ConstructionRequestObserver(
 				(ConstructionRequest) productionRequest,
 				unitLeadTime
@@ -89,6 +85,7 @@ public class GameController {
 			throw new UnknownProductionRequestException(productionRequest.getClass().getSimpleName());
 		}
 		
+		log.info("pushing production request of type {} to queue {}", observer.getClass().getSimpleName(), listName.toString());
 		jmsTemplate.convertAndSend(listName.toString(), observer);
 		
 		return game;

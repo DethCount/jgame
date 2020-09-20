@@ -11,8 +11,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Where;
-
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -34,7 +32,6 @@ public class ShipRequest extends ProductionRequest
 	Integer nb;
 	
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
-	@Where(clause = "status = 'Running'")
 	@JsonIgnore
 	List<ShipRequestObserver> observers;
 	
