@@ -30,7 +30,7 @@ jgame:
       retryDelay: 1000
       failedDelay: 2000
     shipyard:
-      destination: Shipyard
+      destination: Shipyyyyard
       retryFailed: false
       failedDestination: Shipyard_FAILED
       minDelay: 100

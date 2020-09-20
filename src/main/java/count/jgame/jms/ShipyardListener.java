@@ -139,7 +139,6 @@ public class ShipyardListener {
 			}
 		} catch(Exception e) {
 			log.error("error: {}: {}", e.getClass().getSimpleName(), e.getMessage());
-			e.printStackTrace(System.err);
 			observer.fail();
 			retryFailed(observer);
 		} finally {

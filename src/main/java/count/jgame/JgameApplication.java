@@ -12,6 +12,8 @@ import org.springframework.jms.support.converter.MessageType;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import lombok.extern.slf4j.Slf4j;
+
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class, MongoAutoConfiguration.class})
 public class JgameApplication implements WebMvcConfigurer {
 
@@ -20,8 +22,7 @@ public class JgameApplication implements WebMvcConfigurer {
 	}
 
 	public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
-		System.out.println("content negociation config");
-	    configurer
+		configurer
 	    	.favorParameter(true)
 	    	.parameterName("format")
 	    	.ignoreAcceptHeader(true)

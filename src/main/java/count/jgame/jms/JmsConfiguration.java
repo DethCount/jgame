@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class JmsConfiguration {
 	ConstructionsConfiguration constructions;
-	ShipyardConfiguration ships;
+	ShipyardConfiguration shipyard;
 	
 	public ConstructionsConfiguration getConstructions() {
 		return constructions;
@@ -15,11 +15,11 @@ public class JmsConfiguration {
 		this.constructions = constructions;
 	}
 	
-	public ShipyardConfiguration getShips() {
-		return ships;
+	public ShipyardConfiguration getShipyard() {
+		return shipyard;
 	}
 	
-	public void setShips(ShipyardConfiguration ships) {
-		this.ships = ships;
+	public void setShipyard(ShipyardConfiguration shipyard) {
+		this.shipyard = shipyard;
 	}
 }

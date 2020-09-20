@@ -3,6 +3,7 @@ package count.jgame.controllers;
 import javax.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import count.jgame.exceptions.UnknownProductionRequestException;
+import count.jgame.exceptions.UnknownProductionListException;
 import count.jgame.models.ConstructionRequest;
 import count.jgame.models.ConstructionRequestObserver;
 import count.jgame.models.Game;
@@ -33,6 +35,17 @@ public class GameController {
 	
 	@Autowired
 	JmsTemplate jmsTemplate;
+	
+	final String SHIPYARD_QUEUE_NAME;
+	final String CONSTRUCTIONS_QUEUE_NAME;
+	
+	GameController(
+		@Value("${jgame.jms.shipyard.destination:Shipyard}") String shipyardQueueName,
+		@Value("${jgame.jms.constructions.destination:Shipyard}") String constructionsQueueName
+	) {
+		SHIPYARD_QUEUE_NAME = shipyardQueueName;
+		CONSTRUCTIONS_QUEUE_NAME = constructionsQueueName;
+	}
 	
 	@GetMapping(path = "/game/{id}")
 	@ResponseBody
@@ -55,7 +68,7 @@ public class GameController {
 	@PostMapping(path = "/game/{id}/production/{listName}")
 	@ResponseBody
 	public Game pushToProd(
-		@PathVariable("id") Long id, 
+		@PathVariable("id") Long id,
 		@PathVariable("listName") ProductionList listName,
 		@RequestBody ProductionRequest productionRequest
 	) {
@@ -68,6 +81,8 @@ public class GameController {
 		
 		productionRequest.setGame(game);
 		
+		String queueName = null;
+		
 		if (productionRequest instanceof ShipRequest) {
 			Double unitLeadTime = 5.0 * (((ShipRequest) productionRequest).getType().ordinal() + 1);
 			
@@ -75,18 +90,26 @@ public class GameController {
 				(ShipRequest) productionRequest,
 				unitLeadTime
 			);
+			
+			queueName = this.SHIPYARD_QUEUE_NAME;
 		} else if (productionRequest instanceof ConstructionRequest) {
 			Double unitLeadTime = 12.0 * (((ConstructionRequest) productionRequest).getType().ordinal() + 1);
 			observer = new ConstructionRequestObserver(
 				(ConstructionRequest) productionRequest,
 				unitLeadTime
 			);
+			
+			queueName = this.CONSTRUCTIONS_QUEUE_NAME;
 		} else {
 			throw new UnknownProductionRequestException(productionRequest.getClass().getSimpleName());
 		}
 		
-		log.info("pushing production request of type {} to queue {}", observer.getClass().getSimpleName(), listName.toString());
-		jmsTemplate.convertAndSend(listName.toString(), observer);
+		if (queueName.length() <= 0) {
+			throw new UnknownProductionListException(listName.name());
+		}
+		
+		log.info("pushing production request of type {} to queue {}", observer.getClass().getSimpleName(), queueName);
+		jmsTemplate.convertAndSend(queueName, observer);
 		
 		return game;
 	}
