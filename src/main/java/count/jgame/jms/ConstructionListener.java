@@ -16,12 +16,11 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.stereotype.Component;
 
+import count.jgame.models.AdministrableLocation;
 import count.jgame.models.ConstructionRequestObserver;
 import count.jgame.models.ConstructionType;
-import count.jgame.models.Game;
-import count.jgame.models.ProductionRequestStatus;
-import count.jgame.repositories.ConstructionRequestObserverRepository;
-import count.jgame.repositories.GameRepository;
+import count.jgame.services.AdministrableLocationService;
+import count.jgame.services.ConstructionRequestObserverService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,10 +35,10 @@ public class ConstructionListener {
 	final Integer FAILED_DELAY; // ms
 	
 	@Autowired
-	GameRepository gameRepository;
+	AdministrableLocationService administrableLocationService;
 	
 	@Autowired
-	ConstructionRequestObserverRepository observerRepository;
+	ConstructionRequestObserverService observerService;
 	
 	@Autowired
 	JmsTemplate jmsTemplate;
@@ -84,25 +83,25 @@ public class ConstructionListener {
 		log.info("ConstructionListener called: {}", observer.toString());
 		try {
 			// retrieve and check game
-			Game game = gameRepository.preloadGame(observer.getGame().getId()).orElse(null);
-			if (null == game) {
-				throw new EntityNotFoundException("game not found");
+			AdministrableLocation location = administrableLocationService
+				.preloadById(
+					observer.getAdministrableLocation().getId()
+				);
+			
+			if (null == location) {
+				throw new EntityNotFoundException("Location not found");
 			}
 			
 			// make sure observer is in db
 			if (null == observer.getId()) {
-				observerRepository.saveAndFlush(observer);
+				observerService.save(observer);
 			}
 
 			// wait for existing constructions for this game
 			
-			List<ConstructionRequestObserver> currentProduction = observerRepository
-				.findBlockingObservers(
-					new ProductionRequestStatus[] {
-						ProductionRequestStatus.Running, 
-						ProductionRequestStatus.Waiting
-					}, 
-					game,
+			List<ConstructionRequestObserver> currentProduction = observerService
+				.getBlocking(
+					location.getId(),
 					observer.getId(),
 					observer.getRequest().getLevel()
 				);
@@ -121,15 +120,15 @@ public class ConstructionListener {
 			log.debug(
 				"{} VS {}", 
 				observer.getRequest().toString(),
-				game.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
+				location.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
 			);
 			
 			if (observer.getRequest().getLevel() 
-				!= game.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
+				!= location.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
 			) {
 				log.info("cancel: level not next for {}", observer.getId());
 				observer.cancel();
-				observerRepository.saveAndFlush(observer);
+				observerService.save(observer);
 				return;
 			}
 			
@@ -158,7 +157,7 @@ public class ConstructionListener {
 			
 			if (shouldHaveDone > 0) {
 				// update game with new construction
-				this.produce(game, observer, shouldHaveDone);
+				this.produce(location, observer, shouldHaveDone);
 			} else {
 				// retry in 1/10th of lead time
 				retry(observer, (int)(observer.getUnitLeadTime() * 100));
@@ -178,7 +177,7 @@ public class ConstructionListener {
 	{
 		delay = Math.max(MIN_DELAY, delay);
 		log.debug("retry {} to {} in {}", observer.getId(), destination, delay);
-		observerRepository.saveAndFlush(observer);
+		observerService.save(observer);
 		
 		final long finalDelay = delay;
 		jmsTemplate.convertAndSend(destination, observer, new MessagePostProcessor() {
@@ -214,21 +213,14 @@ public class ConstructionListener {
 		this.retry(observer, FAILED_DESTINATION, FAILED_DELAY);
 	}
 	
-	void produce(Game game, ConstructionRequestObserver observer, Integer nbProduced)
+	void produce(AdministrableLocation location, ConstructionRequestObserver observer, Integer nbProduced)
 	{
 		ConstructionType type = observer.getRequest().getType();
 		Integer level = observer.getRequest().getLevel();
 		
-		if (!game.getConstructions().containsKey(type)) {
-			level = 1;
-		}
+		administrableLocationService.produceConstruction(location, type, level);
 
-		log.info("building construction {} at level {}", type.getName(), level);
-		
-		game.getConstructions().put(type, level);
 		observer.finish();
-		
-		gameRepository.saveAndFlush(game);
-		observerRepository.saveAndFlush(observer);
+		observerService.save(observer);
 	}
 }

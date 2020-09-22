@@ -73,16 +73,20 @@ public class ConstructionRequest extends ProductionRequest
 		super();
 	}
 
-	public ConstructionRequest(Game game, ConstructionType type, Integer level) {
-		super();
+	public ConstructionRequest(AdministrableLocation administrableLocation, ConstructionType type, Integer level) {
+		super(administrableLocation);
 		
-		this.game = game;
 		this.type = type;
 		this.level = level;
 	}
 
 	@Override
 	public String toString() {
-		return "ConstructionRequest [type=" + type + ", level=" + level + "]";
+		return String.format(
+			"ConstructionRequest [administrableLocationId=%d, type=%s, level=%d]",
+			this.getAdministrableLocation() == null ? null : this.getAdministrableLocation().getId(),
+			type,
+			level
+		);
 	}
 }

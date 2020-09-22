@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import count.jgame.models.Game;
 import count.jgame.models.ProductionRequestStatus;
 import count.jgame.models.ShipRequestObserver;
 
@@ -15,7 +14,7 @@ extends JpaRepository<ShipRequestObserver, Long>
 	@Query("select o, r"
 		+ " from ShipRequestObserver o"
 		+ " inner join o.request r"
-		+ " where o.game = :game"
+		+ " where o.administrableLocation.id = :administrableLocationId"
 			+ " and o.status IN (:status)"
 			+ " and o.id <> :id"
 		+ " order by o.id ASC"
@@ -23,7 +22,7 @@ extends JpaRepository<ShipRequestObserver, Long>
 	List<ShipRequestObserver> 
 	findBlockingObservers(
 		ProductionRequestStatus[] status, 
-		Game game, 
+		Long administrableLocationId, 
 		Long id
 	);
 }

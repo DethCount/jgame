@@ -225,6 +225,14 @@ public class MysqlGameDesignLoader implements CommandLineRunner {
 		planet.getResources().add(mainEntityManager.getReference(ResourceType.class, 2l));
 		planet.getResources().add(mainEntityManager.getReference(ResourceType.class, 3l));
 		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 1l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 2l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 3l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 4l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 5l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 6l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 7l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 8l));
+		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 9l));
 		
 		repository.save(planet);
 		

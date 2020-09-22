@@ -4,24 +4,13 @@ import javax.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
-import count.jgame.exceptions.UnknownProductionRequestException;
-import count.jgame.models.ConstructionRequest;
-import count.jgame.models.ConstructionRequestObserver;
-import count.jgame.models.ConstructionType;
+import count.jgame.models.AdministrableLocation;
+import count.jgame.models.AdministrableLocationType;
 import count.jgame.models.Game;
-import count.jgame.models.ProductionRequest;
-import count.jgame.models.ProductionRequestObserver;
-import count.jgame.models.ShipRequest;
-import count.jgame.models.ShipRequestObserver;
-import count.jgame.models.ShipType;
-import count.jgame.repositories.ConstructionRequestObserverRepository;
-import count.jgame.repositories.ConstructionTypeRepository;
+
 import count.jgame.repositories.GameRepository;
-import count.jgame.repositories.ShipRequestObserverRepository;
-import count.jgame.repositories.ShipTypeRepository;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -31,29 +20,26 @@ public class GameService {
 	private GameRepository repository;
 	
 	@Autowired
-	private ConstructionTypeRepository constructionTypeRepository;
-	
+	private AdministrableLocationTypeService administrableLocationTypeService;
+
 	@Autowired
-	private ShipTypeRepository shipTypeRepository;
+	private AdministrableLocationService administrableLocationService;
 	
-	@Autowired
-	private ConstructionRequestObserverRepository constructionRequestObserverRepository;
-	
-	@Autowired
-	private ShipRequestObserverRepository shipRequestObserverRepository;
-	
-	@Autowired
-	JmsTemplate jmsTemplate;
-	
-	final String SHIPYARD_QUEUE_NAME;
-	final String CONSTRUCTIONS_QUEUE_NAME;
+	final String DEFAULT_ADMINISTRABLE_LOCATION_NAME;
+	final Long DEFAULT_ADMINISTRABLE_LOCATION_TYPE_ID;
 	
 	GameService(
-			@Value("${jgame.jms.shipyard.destination:Shipyard}") String shipyardQueueName,
-			@Value("${jgame.jms.constructions.destination:Shipyard}") String constructionsQueueName
+			@Value("${jgame.game.defaultAdministrableLocation.name}") String defaultAdministrableLocationName,
+			@Value("${jgame.game.defaultAdministrableLocation.typeId}") Long defaultAdministrableLocationTypeId
 	) {
-		SHIPYARD_QUEUE_NAME = shipyardQueueName;
-		CONSTRUCTIONS_QUEUE_NAME = constructionsQueueName;
+		DEFAULT_ADMINISTRABLE_LOCATION_NAME = defaultAdministrableLocationName;
+		DEFAULT_ADMINISTRABLE_LOCATION_TYPE_ID = defaultAdministrableLocationTypeId;
+		
+		log.info(
+			"game service started with parameters {} {}", 
+			DEFAULT_ADMINISTRABLE_LOCATION_NAME, 
+			DEFAULT_ADMINISTRABLE_LOCATION_TYPE_ID
+		);
 	}
 	
 	public Game get(Long id) {
@@ -63,18 +49,28 @@ public class GameService {
 	public Game save(Game input) {
 		Game game = new Game();
 		game.setPlayer(input.getPlayer());
+		repository.saveAndFlush(game);
 		
-		for (ConstructionType type : constructionTypeRepository.findAll()) {
-			game.getConstructions().put(type, 0);
+		AdministrableLocationType defaultLocationType = administrableLocationTypeService
+			.get(DEFAULT_ADMINISTRABLE_LOCATION_TYPE_ID);
+
+		if (null == defaultLocationType) {
+			throw new EntityNotFoundException("Default location type not found");
 		}
 		
-		for (ShipType type : shipTypeRepository.findAll()) {
-			game.getShips().put(type, 0);
+		AdministrableLocation defaultLocation = administrableLocationService.save(
+			game,
+			defaultLocationType,
+			new AdministrableLocation(DEFAULT_ADMINISTRABLE_LOCATION_NAME)
+		);
+		
+		if (null == defaultLocation) {
+			throw new EntityNotFoundException("Default location not found");
 		}
 		
-		// @todo add default administrable location
+		game.getAdministrableLocations().add(defaultLocation);
 		
-		return repository.save(game);
+		return repository.preloadGame(game.getId()).get();
 	}
 
 	public Game update(Long id, Game input)
@@ -87,70 +83,8 @@ public class GameService {
 		
 		game.setPlayer(input.getPlayer());
 		
-		this.refresh(game, true);
+		repository.saveAndFlush(game);
 		
 		return repository.preloadGame(id).get();
 	}
-	
-	public Game refresh(Game game, Boolean flush)
-	{	
-		// @todo calculate resource productions
-		
-		// @todo move constructions to administrable locations
-		
-		for (ShipType t : shipTypeRepository.findAll()) {
-			if (!game.getShips().containsKey(t)) {
-				game.getShips().put(t, 0);
-			}
-		}
-
-		for (ConstructionType t : constructionTypeRepository.findAll()) {
-			if (!game.getConstructions().containsKey(t)) {
-				game.getConstructions().put(t, 0);
-			}
-		}
-		
-		return flush != false 
-			? repository.saveAndFlush(game) 
-			: repository.save(game);
-	}
-	
-	public void pushToProd(Game game, ProductionRequest productionRequest)
-	{
-		ProductionRequestObserver observer = null;
-		
-		productionRequest.setGame(game);
-		
-		String queueName = null;
-		
-		if (productionRequest instanceof ShipRequest) {
-			Double unitLeadTime = 5.0;
-			
-			observer = new ShipRequestObserver(
-				(ShipRequest) productionRequest,
-				unitLeadTime
-			);
-			
-			shipRequestObserverRepository.saveAndFlush((ShipRequestObserver) observer);
-			
-			queueName = this.SHIPYARD_QUEUE_NAME;
-		} else if (productionRequest instanceof ConstructionRequest) {
-			Double unitLeadTime = 10.0;
-			observer = new ConstructionRequestObserver(
-				(ConstructionRequest) productionRequest,
-				unitLeadTime
-			);
-			
-			constructionRequestObserverRepository.saveAndFlush((ConstructionRequestObserver) observer);
-			
-			queueName = this.CONSTRUCTIONS_QUEUE_NAME;
-		} else {
-			throw new UnknownProductionRequestException(productionRequest.getClass().getSimpleName());
-		}
-		
-		log.info("pushing production request of type {} to queue {}", observer.getClass().getSimpleName(), queueName);
-		jmsTemplate.convertAndSend(queueName, observer);
-	}
-	
-	// public void updateResources(AdministrableLocation location) {}
 }

@@ -33,9 +33,9 @@ abstract public class ProductionRequestObserver{
 	ProductionRequestStatus status = ProductionRequestStatus.Waiting;
 
 	@ManyToOne
-	@JoinColumn(name = "id_game", referencedColumnName = "id")
+	@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")
 	@JsonIdentityReference(alwaysAsId = true)
-	Game game;
+	AdministrableLocation administrableLocation;
 
 	public Long getId() {
 		return id;
@@ -69,14 +69,14 @@ abstract public class ProductionRequestObserver{
 		this.status = status;
 	}
 	
-	public Game getGame() {
-		return game;
+	public AdministrableLocation getAdministrableLocation() {
+		return administrableLocation;
 	}
 
-	public void setGame(Game game) {
-		this.game = game;
+	public void setAdministrableLocation(AdministrableLocation administrableLocation) {
+		this.administrableLocation = administrableLocation;
 	}
-	
+
 	public void waiting() {
 		this.startedAt = null;
 		this.finishedAt = null;

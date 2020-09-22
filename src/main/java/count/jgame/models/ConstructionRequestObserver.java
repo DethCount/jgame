@@ -51,7 +51,7 @@ public class ConstructionRequestObserver
 
 	public void setRequest(ConstructionRequest request) {
 		this.request = request;
-		this.game = this.request.getGame();
+		this.administrableLocation = this.request.getAdministrableLocation();
 	}
 
 	public ConstructionRequestObserver() {
@@ -62,7 +62,7 @@ public class ConstructionRequestObserver
 		super();
 		
 		this.request = request;
-		this.game = this.request.getGame();
+		this.administrableLocation = this.request.getAdministrableLocation();
 		this.unitLeadTime = unitLeadTime;
 	}
 

@@ -16,12 +16,11 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.stereotype.Component;
 
-import count.jgame.models.Game;
-import count.jgame.models.ProductionRequestStatus;
+import count.jgame.models.AdministrableLocation;
 import count.jgame.models.ShipRequestObserver;
 import count.jgame.models.ShipType;
-import count.jgame.repositories.GameRepository;
-import count.jgame.repositories.ShipRequestObserverRepository;
+import count.jgame.services.AdministrableLocationService;
+import count.jgame.services.ShipRequestObserverService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,10 +34,10 @@ public class ShipyardListener {
 	final Integer FAILED_DELAY;
 	
 	@Autowired
-	GameRepository gameRepository;
+	AdministrableLocationService administrableLocationService;
 	
 	@Autowired
-	ShipRequestObserverRepository observerRepository;
+	ShipRequestObserverService observerService;
 	
 	@Autowired
 	JmsTemplate jmsTemplate;
@@ -70,25 +69,25 @@ public class ShipyardListener {
 		log.info("ShipyardListener called: {}", observer.toString());
 		try {
 			// retrieve and check game
-			Game game = gameRepository.preloadGame(observer.getGame().getId()).orElse(null);
-			if (null == game) {
-				throw new EntityNotFoundException("game not found");
+			AdministrableLocation location = administrableLocationService
+				.preloadById(
+					observer.getAdministrableLocation().getId()
+				);
+			
+			if (null == location) {
+				throw new EntityNotFoundException("Location not found");
 			}
 			
 			// make sure observer is in db
 			if (null == observer.getId()) {
-				observerRepository.saveAndFlush(observer);
+				observerService.save(observer);
 			}
 
 			// wait for existing constructions for this game
 			
-			List<ShipRequestObserver> currentProduction = observerRepository
-				.findBlockingObservers(
-					new ProductionRequestStatus[] {
-						ProductionRequestStatus.Running, 
-						ProductionRequestStatus.Waiting
-					}, 
-					game,
+			List<ShipRequestObserver> currentProduction = observerService
+				.getBlocking(
+					location.getId(),
 					observer.getId()
 				);
 			
@@ -128,7 +127,7 @@ public class ShipyardListener {
 			
 			if (shouldHaveDone > 0) {
 				// update game with new construction
-				this.produce(game, observer, shouldHaveDone);
+				this.produce(location, observer, shouldHaveDone);
 				
 				if (observer.getFinishedAt() == null) {
 					retry(observer, (int)(observer.getUnitLeadTime() * 1000));
@@ -139,6 +138,7 @@ public class ShipyardListener {
 			}
 		} catch(Exception e) {
 			log.error("error: {}: {}", e.getClass().getSimpleName(), e.getMessage());
+			e.printStackTrace(System.err);
 			observer.fail();
 			retryFailed(observer);
 		} finally {
@@ -151,7 +151,7 @@ public class ShipyardListener {
 	{
 		delay = Math.max(MIN_DELAY, delay);
 		log.debug("retry {} to {} in {}", observer.getId(), destination, delay);
-		observerRepository.saveAndFlush(observer);
+		observerService.save(observer);
 		
 		final long finalDelay = delay;
 		jmsTemplate.convertAndSend(destination, observer, new MessagePostProcessor() {
@@ -187,32 +187,19 @@ public class ShipyardListener {
 		this.retry(observer, FAILED_DESTINATION, FAILED_DELAY);
 	}
 	
-	void produce(Game game, ShipRequestObserver observer, Integer nbProduced)
+	void produce(AdministrableLocation location, ShipRequestObserver observer, Integer nbProduced)
 	{
 		ShipType type = observer.getRequest().getType();
 		Integer nb = nbProduced;
 		
-		log.debug("before produce, hasStock: {}, type: {}, stock: {}, directAccess: {}", 
-			game.getShips().containsKey(type), 
-			type.toString(),
-			game.getShips().toString(),
-			game.getShips().get(type)
-		);
+		administrableLocationService.produceShip(location, type, nb);
 		
-		if (game.getShips().containsKey(type)) {
-			nb += game.getShips().get(type);
-		}
-
-		log.info("now owns {} {} ship(s)", nb, type.getName());
-		
-		game.getShips().put(type, nb);
 		observer.setNbDone(observer.getNbDone() + nbProduced);
 		
 		if (observer.getNbDone() >= observer.getRequest().getNb()) {
 			observer.finish();
 		}
 		
-		gameRepository.saveAndFlush(game);
-		observerRepository.saveAndFlush(observer);
+		observerService.save(observer);
 	}
 }

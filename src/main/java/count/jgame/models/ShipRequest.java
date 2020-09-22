@@ -73,10 +73,9 @@ public class ShipRequest extends ProductionRequest
 		super();
 	}
 	
-	ShipRequest(Game game, ShipType type, Integer nb) {
-		super();
+	ShipRequest(AdministrableLocation administrableLocation, ShipType type, Integer nb) {
+		super(administrableLocation);
 		
-		this.game = game;
 		this.type = type;
 		this.nb = nb;
 	}
@@ -84,8 +83,8 @@ public class ShipRequest extends ProductionRequest
 	@Override
 	public String toString() {
 		return String.format(
-			"ShipRequest [gameId=%d, type=%s, nb=%d]",
-			this.getGame() == null ? null : this.getGame().getId(),
+			"ShipRequest [administrableLocationId=%d, type=%s, nb=%d]",
+			this.getAdministrableLocation() == null ? null : this.getAdministrableLocation().getId(),
 			type,
 			nb
 		);

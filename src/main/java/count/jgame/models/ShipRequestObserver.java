@@ -55,7 +55,7 @@ public class ShipRequestObserver
 
 	public void setRequest(ShipRequest request) {
 		this.request = request;
-		this.game = this.request.getGame();
+		this.administrableLocation = this.request.getAdministrableLocation();
 	}
 
 	public ShipRequestObserver() {
@@ -66,7 +66,7 @@ public class ShipRequestObserver
 		super();
 		
 		this.request = request;
-		this.game = this.request.getGame();
+		this.administrableLocation = this.request.getAdministrableLocation();
 		this.unitLeadTime = unitLeadTime;
 	}
 

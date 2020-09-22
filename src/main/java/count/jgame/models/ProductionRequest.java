@@ -18,9 +18,9 @@ public abstract class ProductionRequest implements ProductionRequestInterface {
 	Long id;
 	
 	@ManyToOne
-	@JoinColumn(name = "id_game", referencedColumnName = "id")
+	@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")
 	@JsonIdentityReference(alwaysAsId = true)
-	Game game;
+	AdministrableLocation administrableLocation;
 
 	public Long getId() {
 		return id;
@@ -30,11 +30,20 @@ public abstract class ProductionRequest implements ProductionRequestInterface {
 		this.id = id;
 	}
 
-	public Game getGame() {
-		return game;
+	public AdministrableLocation getAdministrableLocation() {
+		return administrableLocation;
 	}
 
-	public void setGame(Game game) {
-		this.game = game;
+	public void setAdministrableLocation(AdministrableLocation administrableLocation) {
+		this.administrableLocation = administrableLocation;
+	}
+
+	public ProductionRequest() {
+		super();
+	}
+
+	public ProductionRequest(AdministrableLocation administrableLocation) {
+		super();
+		this.administrableLocation = administrableLocation;
 	}
 }

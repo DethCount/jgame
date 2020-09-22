@@ -1,23 +1,51 @@
 package count.jgame.models;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyJoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import count.jgame.serialization.ConstructionTypeKeyDeserializer;
+import count.jgame.serialization.ConstructionTypeKeySerializer;
 import count.jgame.serialization.EntityIdResolver;
+import count.jgame.serialization.ShipTypeKeyDeserializer;
+import count.jgame.serialization.ShipTypeKeySerializer;
 
 @Entity
-@Table(name = "administrable_location")
+@Table(
+	name = "administrable_location",
+	uniqueConstraints = {
+		@UniqueConstraint(columnNames = {"id_game", "slug"})
+	}
+)
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
 	property = "id",
@@ -33,9 +61,56 @@ public class AdministrableLocation {
 	@Length(max = 255)
 	String name;
 	
+	@Column(length = 255)
+	@Length(min = 1, max = 255)
+	String slug;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name = "last_resource_update")
+	Date lastResourceUpdate;
+	
 	@ManyToOne
 	@JoinColumn(name = "id_administration_location_type", referencedColumnName = "id")
 	AdministrableLocationType type;
+	
+	@ManyToOne
+	@JoinColumn(name = "id_game", referencedColumnName = "id")
+	@JsonIdentityReference(alwaysAsId = true)
+	Game game;
+	
+	@ElementCollection
+	@CollectionTable(
+		name = "administrable_location_ships", 
+		joinColumns = {@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")}
+	)
+	@MapKeyJoinColumn(name = "id_ship_type", referencedColumnName = "id")
+	@Column(name = "nb")
+	@OrderBy("id_ship_type ASC")
+	@JsonDeserialize(keyUsing = ShipTypeKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ShipTypeKeySerializer.class)
+	Map<ShipType,Integer> ships = new HashMap<>();
+
+	@ElementCollection
+	@CollectionTable(
+		name = "administrable_location_constructions", 
+		joinColumns = {@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")}
+	)
+	@MapKeyColumn(name = "type")
+	@MapKeyJoinColumn(name = "id_construction_type", referencedColumnName = "id")
+	@OrderBy("id_construction_type ASC")
+	@JsonDeserialize(keyUsing = ConstructionTypeKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ConstructionTypeKeySerializer.class)
+	Map<ConstructionType,Integer> constructions = new HashMap<>();
+	
+	@OneToMany(mappedBy = "administrableLocation")
+	@Where(clause = "status IN ('Running', 'Waiting')")
+	@OrderBy("id ASC")
+	List<ShipRequestObserver> shipProduction = new ArrayList<>();
+	
+	@OneToMany(mappedBy = "administrableLocation")
+	@Where(clause = "status IN ('Running', 'Waiting')")
+	@OrderBy("id ASC")
+	List<ConstructionRequestObserver> constructionProduction = new ArrayList<>();
 
 	public Long getId() {
 		return id;
@@ -53,11 +128,92 @@ public class AdministrableLocation {
 		this.name = name;
 	}
 
+	public String getSlug() {
+		return slug;
+	}
+
+	public void setSlug(String slug) {
+		this.slug = slug;
+	}
+
 	public AdministrableLocationType getType() {
 		return type;
 	}
 
 	public void setType(AdministrableLocationType type) {
 		this.type = type;
+	}
+
+	public Game getGame() {
+		return game;
+	}
+
+	public void setGame(Game game) {
+		this.game = game;
+	}
+	
+	public Date getLastResourceUpdate() {
+		return lastResourceUpdate;
+	}
+
+	public void setLastResourceUpdate(Date lastResourceUpdate) {
+		this.lastResourceUpdate = lastResourceUpdate;
+	}
+
+	public Map<ShipType, Integer> getShips() {
+		return ships;
+	}
+
+	public void setShips(Map<ShipType, Integer> ships) {
+		this.ships = ships;
+	}
+
+	public Map<ConstructionType, Integer> getConstructions() {
+		return constructions;
+	}
+
+	public void setConstructions(Map<ConstructionType, Integer> constructions) {
+		this.constructions = constructions;
+	}
+
+	public List<ShipRequestObserver> getShipProduction() {
+		return shipProduction;
+	}
+
+	public void setShipProduction(List<ShipRequestObserver> shipProduction) {
+		this.shipProduction = shipProduction;
+	}
+
+	public List<ConstructionRequestObserver> getConstructionProduction() {
+		return constructionProduction;
+	}
+
+	public void setConstructionProduction(List<ConstructionRequestObserver> constructionProduction) {
+		this.constructionProduction = constructionProduction;
+	}
+
+	public AdministrableLocation()
+	{
+		super();
+	}
+
+	public AdministrableLocation(String name)
+	{
+		super();
+		this.name = name;
+	}
+
+	public AdministrableLocation(Long id, String name, AdministrableLocationType type, Game game) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.type = type;
+		this.game = game;
+	}
+
+	@Override
+	public String toString() {
+		return "AdministrableLocation [id=" + id + ", name=" + name + ", slug=" + slug + ", lastResourceUpdate="
+				+ lastResourceUpdate + ", type=" + type + "]";
 	}
 }

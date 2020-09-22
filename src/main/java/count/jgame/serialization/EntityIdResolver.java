@@ -28,7 +28,8 @@ public class EntityIdResolver implements ObjectIdResolver
     @Override
     public void bindItem(final ObjectIdGenerator.IdKey id, final Object pojo) {}
 
-    @Override
+    @SuppressWarnings("static-access")
+	@Override
     public Object resolveId(final ObjectIdGenerator.IdKey id) {
 
         return this.entityManager.find(id.scope, id.key);

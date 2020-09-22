@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import count.jgame.models.Game;
-import count.jgame.models.ProductionRequest;
 import count.jgame.services.GameService;
 
 @RestController
@@ -48,21 +47,5 @@ public class GameController {
 		@RequestBody Game input
 	) {
 		return gameService.update(id, input);
-	}
-	
-	@PostMapping(path = "/game/{id}/build")
-	@ResponseBody
-	public Game pushToProd(
-		@PathVariable("id") Long id,
-		@RequestBody ProductionRequest productionRequest
-	) {
-		Game game = gameService.get(id);
-		if (game == null) {
-			throw new EntityNotFoundException(String.format("game not found : %d", id));
-		}
-		
-		gameService.pushToProd(game, productionRequest);
-		
-		return game;
 	}
 }

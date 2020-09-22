@@ -95,5 +95,10 @@ public class AdministrableLocationType {
 		super();
 		this.id = id;
 		this.name = name;
-	}	
+	}
+
+	@Override
+	public String toString() {
+		return "AdministrableLocationType [id=" + id + ", name=" + name + "]";
+	}
 }

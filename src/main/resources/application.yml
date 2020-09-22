@@ -36,3 +36,7 @@ jgame:
       minDelay: 100
       retryDelay: 1000
       failedDelay: 2000
+  game:
+    defaultAdministrableLocation:
+      name: "First planet"
+      typeId: 1

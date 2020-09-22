@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import count.jgame.models.ConstructionRequestObserver;
-import count.jgame.models.Game;
 import count.jgame.models.ProductionRequestStatus;
 
 public interface ConstructionRequestObserverRepository 
@@ -15,7 +14,7 @@ extends JpaRepository<ConstructionRequestObserver, Long>
 	@Query("select o, r"
 		+ " from ConstructionRequestObserver o"
 		+ " inner join o.request r"
-		+ " where o.game = :game"
+		+ " where o.administrableLocation.id = :administrableLocationId"
 			+ " and o.status IN (:status)"
 			+ " and o.id <> :id"
 			+ " and (r.level < :level or (r.level = :level and o.id < :id))"
@@ -24,7 +23,7 @@ extends JpaRepository<ConstructionRequestObserver, Long>
 	List<ConstructionRequestObserver> 
 	findBlockingObservers(
 		ProductionRequestStatus[] status, 
-		Game game, 
+		Long administrableLocationId, 
 		Long id,
 		Integer level
 	);

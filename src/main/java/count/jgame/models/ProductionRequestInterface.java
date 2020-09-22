@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 	property="_type"
 )
 public interface ProductionRequestInterface {
-	Game getGame();
+	AdministrableLocation getAdministrableLocation();
 	
-	void setGame(Game game);
+	void setAdministrableLocation(AdministrableLocation administrableLocation);
 }
