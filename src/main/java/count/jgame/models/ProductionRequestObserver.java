@@ -14,6 +14,8 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+
 @MappedSuperclass
 @DiscriminatorColumn(name = "type")
 abstract public class ProductionRequestObserver{
@@ -32,6 +34,7 @@ abstract public class ProductionRequestObserver{
 
 	@ManyToOne
 	@JoinColumn(name = "id_game", referencedColumnName = "id")
+	@JsonIdentityReference(alwaysAsId = true)
 	Game game;
 
 	public Long getId() {

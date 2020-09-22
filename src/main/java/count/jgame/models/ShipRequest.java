@@ -6,14 +6,20 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import count.jgame.serialization.EntityIdResolver;
+import count.jgame.serialization.ShipTypeDeserializer;
+import count.jgame.serialization.ShipTypeSerializer;
 
 @Entity
 @Table(name = "ship_request")
@@ -21,12 +27,16 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
 	property = "id",
-	scope = ShipRequest.class
+	scope = ShipRequest.class,
+	resolver = EntityIdResolver.class
 )
 public class ShipRequest extends ProductionRequest
 {	
-	@Enumerated(EnumType.STRING)
-	ShipType type;	
+	@ManyToOne
+	@JoinColumn(name = "id_ship_type", referencedColumnName = "id")
+	@JsonDeserialize(using = ShipTypeDeserializer.class)
+	@JsonSerialize(using = ShipTypeSerializer.class)
+	ShipType type;
 
 	@Column
 	Integer nb;

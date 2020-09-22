@@ -192,11 +192,18 @@ public class ShipyardListener {
 		ShipType type = observer.getRequest().getType();
 		Integer nb = nbProduced;
 		
+		log.debug("before produce, hasStock: {}, type: {}, stock: {}, directAccess: {}", 
+			game.getShips().containsKey(type), 
+			type.toString(),
+			game.getShips().toString(),
+			game.getShips().get(type)
+		);
+		
 		if (game.getShips().containsKey(type)) {
 			nb += game.getShips().get(type);
 		}
 
-		log.info("now owns {} {} ship(s)", nb, type.name());
+		log.info("now owns {} {} ship(s)", nb, type.getName());
 		
 		game.getShips().put(type, nb);
 		observer.setNbDone(observer.getNbDone() + nbProduced);

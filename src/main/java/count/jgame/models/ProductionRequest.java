@@ -8,6 +8,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+
 @MappedSuperclass
 @DiscriminatorColumn(name = "request_type")
 public abstract class ProductionRequest implements ProductionRequestInterface {
@@ -17,6 +19,7 @@ public abstract class ProductionRequest implements ProductionRequestInterface {
 	
 	@ManyToOne
 	@JoinColumn(name = "id_game", referencedColumnName = "id")
+	@JsonIdentityReference(alwaysAsId = true)
 	Game game;
 
 	public Long getId() {

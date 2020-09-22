@@ -120,12 +120,12 @@ public class ConstructionListener {
 			
 			log.debug(
 				"{} VS {}", 
-				observer.getRequest().getLevel(),
-				game.getConstructions().get(observer.getRequest().getType()) + 1
+				observer.getRequest().toString(),
+				game.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
 			);
 			
 			if (observer.getRequest().getLevel() 
-				!= game.getConstructions().get(observer.getRequest().getType()) + 1
+				!= game.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
 			) {
 				log.info("cancel: level not next for {}", observer.getId());
 				observer.cancel();
@@ -165,6 +165,7 @@ public class ConstructionListener {
 			}
 		} catch(Exception e) {
 			log.error("error: {}: {}", e.getClass().getSimpleName(), e.getMessage());
+			e.printStackTrace(System.err);
 			observer.fail();
 			retryFailed(observer);
 		} finally {
@@ -222,7 +223,7 @@ public class ConstructionListener {
 			level = 1;
 		}
 
-		log.info("building construction {} at level {}", type.name(), level);
+		log.info("building construction {} at level {}", type.getName(), level);
 		
 		game.getConstructions().put(type, level);
 		observer.finish();

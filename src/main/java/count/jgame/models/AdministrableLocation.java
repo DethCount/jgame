@@ -5,8 +5,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.validation.constraints.NotBlank;
 
 import org.hibernate.validator.constraints.Length;
 
@@ -16,22 +17,25 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import count.jgame.serialization.EntityIdResolver;
 
 @Entity
-@Table(name = "ship_type")
+@Table(name = "administrable_location")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
 	property = "id",
-	scope = ShipType.class,
+	scope = AdministrableLocation.class,
 	resolver = EntityIdResolver.class
 )
-public class ShipType {
+public class AdministrableLocation {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	Long id;
 	
 	@Column(length = 255)
-	@Length(min = 1, max = 255)
-	@NotBlank
+	@Length(max = 255)
 	String name;
+	
+	@ManyToOne
+	@JoinColumn(name = "id_administration_location_type", referencedColumnName = "id")
+	AdministrableLocationType type;
 
 	public Long getId() {
 		return id;
@@ -49,36 +53,11 @@ public class ShipType {
 		this.name = name;
 	}
 
-	public ShipType() {
-		super();
+	public AdministrableLocationType getType() {
+		return type;
 	}
 
-	public ShipType(Long id, @Length(min = 1, max = 255) @NotBlank String name) {
-		super();
-		this.id = id;
-		this.name = name;
-	}
-
-	@Override
-	public String toString() {
-		return "ShipType [" + hashCode() + ", id=" + id + ", name=" + name + "]";
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-            return true;
-        }
-        
-		if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        
-		return this.getId() == ((ShipType) obj).getId();
-	}
-	
-	@Override
-	public int hashCode() {
-		return this.getId() == null ? 0 : this.getId().hashCode();
+	public void setType(AdministrableLocationType type) {
+		this.type = type;
 	}
 }

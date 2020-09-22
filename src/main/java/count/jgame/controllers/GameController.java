@@ -26,7 +26,12 @@ import count.jgame.models.ProductionRequestObserver;
 import count.jgame.models.ShipRequest;
 import count.jgame.models.ShipRequestObserver;
 import count.jgame.models.ShipType;
+import count.jgame.repositories.ConstructionRequestObserverRepository;
+import count.jgame.repositories.ConstructionTypeRepository;
 import count.jgame.repositories.GameRepository;
+import count.jgame.repositories.ShipRequestObserverRepository;
+import count.jgame.repositories.ShipTypeRepository;
+import count.jgame.services.GameService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -34,7 +39,22 @@ import lombok.extern.slf4j.Slf4j;
 public class GameController {
 	
 	@Autowired
+	private GameService gameService;
+	
+	@Autowired
 	private GameRepository repository;
+	
+	@Autowired
+	private ConstructionTypeRepository constructionTypeRepository;
+	
+	@Autowired
+	private ShipTypeRepository shipTypeRepository;
+	
+	@Autowired
+	private ConstructionRequestObserverRepository constructionRequestObserverRepository;
+	
+	@Autowired
+	private ShipRequestObserverRepository shipRequestObserverRepository;
 	
 	@Autowired
 	JmsTemplate jmsTemplate;
@@ -54,16 +74,27 @@ public class GameController {
 	@ResponseBody
 	public Game get(@PathVariable(name = "id") Long id) {
 		Game game = repository.findById(id).orElse(null);
-		log.debug("Game: {}", game.toString());		
+		if (game == null) {
+			throw new EntityNotFoundException(String.format("game not found : %d", id));
+		}
 		
 		return game;
 	}
 	
 	@PostMapping(path = "/game", consumes = {MediaType.APPLICATION_JSON_VALUE})
 	@ResponseBody
-	public Game post(@RequestBody Game input) {
+	public Game post(@RequestBody Game input)
+	{
 		Game game = new Game();
 		game.setPlayer(input.getPlayer());
+		
+		for (ConstructionType type : constructionTypeRepository.findAll()) {
+			game.getConstructions().put(type, 0);
+		}
+		
+		for (ShipType type : shipTypeRepository.findAll()) {
+			game.getShips().put(type, 0);
+		}
 		
 		return repository.save(game);
 	}
@@ -74,18 +105,20 @@ public class GameController {
 		@PathVariable("id") Long id,
 		@RequestBody Game input
 	) {
-		Game game = repository.findById(id).orElse(null);
+		Game game = repository.preloadGame(id).orElse(null);
 		if (game == null) {
 			throw new EntityNotFoundException(String.format("game not found : %d", id));
 		}
 		
-		for (ShipType t : ShipType.values()) {
+		gameService.updateResources(game);
+		
+		for (ShipType t : shipTypeRepository.findAll()) {
 			if (!game.getShips().containsKey(t)) {
 				game.getShips().put(t, 0);
 			}
 		}
 
-		for (ConstructionType t : ConstructionType.values()) {
+		for (ConstructionType t : constructionTypeRepository.findAll()) {
 			if (!game.getConstructions().containsKey(t)) {
 				game.getConstructions().put(t, 0);
 			}
@@ -115,20 +148,24 @@ public class GameController {
 		String queueName = null;
 		
 		if (productionRequest instanceof ShipRequest) {
-			Double unitLeadTime = 1.0 * (((ShipRequest) productionRequest).getType().ordinal() + 1);
+			Double unitLeadTime = 5.0;
 			
 			observer = new ShipRequestObserver(
 				(ShipRequest) productionRequest,
 				unitLeadTime
 			);
 			
+			shipRequestObserverRepository.saveAndFlush((ShipRequestObserver) observer);
+			
 			queueName = this.SHIPYARD_QUEUE_NAME;
 		} else if (productionRequest instanceof ConstructionRequest) {
-			Double unitLeadTime = 1.0 * (((ConstructionRequest) productionRequest).getType().ordinal() + 1);
+			Double unitLeadTime = 10.0;
 			observer = new ConstructionRequestObserver(
 				(ConstructionRequest) productionRequest,
 				unitLeadTime
 			);
+			
+			constructionRequestObserverRepository.saveAndFlush((ConstructionRequestObserver) observer);
 			
 			queueName = this.CONSTRUCTIONS_QUEUE_NAME;
 		} else {

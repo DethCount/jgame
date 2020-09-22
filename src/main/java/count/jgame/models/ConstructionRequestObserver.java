@@ -10,13 +10,16 @@ import javax.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
+import count.jgame.serialization.EntityIdResolver;
+
 @Entity
 @Table(name = "construction_request_observer")
 @DiscriminatorValue("construction")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
 	property = "id",
-	scope = ConstructionRequestObserver.class
+	scope = ConstructionRequestObserver.class,
+	resolver = EntityIdResolver.class
 )
 public class ConstructionRequestObserver 
 	extends ProductionRequestObserver 
@@ -24,7 +27,14 @@ public class ConstructionRequestObserver
 	@Column(name = "unit_lead_time")
 	Double unitLeadTime = 0.0; // temps de production d'une unité en s
 	
-	@OneToOne(cascade = CascadeType.ALL)
+	@OneToOne(cascade = {
+		CascadeType.ALL, 
+		CascadeType.PERSIST, 
+		CascadeType.DETACH, 
+		CascadeType.MERGE, 
+		CascadeType.REFRESH, 
+		CascadeType.REMOVE
+	})
 	ConstructionRequest request;
 
 	public Double getUnitLeadTime() {

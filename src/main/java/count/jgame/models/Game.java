@@ -3,20 +3,24 @@ package count.jgame.models;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Date;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.validation.constraints.NotBlank;
 
 import org.hibernate.annotations.Where;
@@ -24,13 +28,22 @@ import org.hibernate.validator.constraints.Length;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import count.jgame.serialization.ConstructionTypeKeyDeserializer;
+import count.jgame.serialization.ConstructionTypeKeySerializer;
+import count.jgame.serialization.EntityIdResolver;
+import count.jgame.serialization.ShipTypeKeyDeserializer;
+import count.jgame.serialization.ShipTypeKeySerializer;
 
 @Entity
 @Table(name = "game")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
 	property = "id",
-	scope = Game.class
+	scope = Game.class,
+	resolver = EntityIdResolver.class
 )
 public class Game {
 	@Id
@@ -45,35 +58,42 @@ public class Game {
 	@Column
 	Long score = 0l;
 	
-	@ElementCollection(fetch = FetchType.LAZY)
+	@Temporal(TemporalType.TIMESTAMP)
+	Date lastResourceUpdate;
+	
+	@ElementCollection
 	@CollectionTable(
 		name = "game_ships", 
 		joinColumns = {@JoinColumn(name = "id_game", referencedColumnName = "id")}
 	)
-	@MapKeyColumn(name = "type")
+	@MapKeyJoinColumn(name = "id_ship_type", referencedColumnName = "id")
 	@Column(name = "nb")
-	@OrderBy("type ASC")
+	@OrderBy("id_ship_type ASC")
+	@JsonDeserialize(keyUsing = ShipTypeKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ShipTypeKeySerializer.class)
 	Map<ShipType,Integer> ships = new HashMap<>();
 
-	@ElementCollection(fetch = FetchType.LAZY)
+	@ElementCollection
 	@CollectionTable(
 		name = "game_constructions", 
 		joinColumns = {@JoinColumn(name = "id_game", referencedColumnName = "id")}
 	)
 	@MapKeyColumn(name = "type")
-	@Column(name = "level")
-	@OrderBy("type ASC")
+	@MapKeyJoinColumn(name = "id_construction_type", referencedColumnName = "id")
+	@OrderBy("id_construction_type ASC")
+	@JsonDeserialize(keyUsing = ConstructionTypeKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ConstructionTypeKeySerializer.class)
 	Map<ConstructionType,Integer> constructions = new HashMap<>();
 	
 	@OneToMany(mappedBy = "game")
 	@Where(clause = "status IN ('Running', 'Waiting')")
 	@OrderBy("id ASC")
-	List<ShipRequestObserver> shipProduction;
+	List<ShipRequestObserver> shipProduction = new ArrayList<>();
 	
 	@OneToMany(mappedBy = "game")
 	@Where(clause = "status IN ('Running', 'Waiting')")
 	@OrderBy("id ASC")
-	List<ConstructionRequestObserver> constructionProduction;
+	List<ConstructionRequestObserver> constructionProduction = new ArrayList<>();
 
 	public Long getId() {
 		return id;
@@ -97,6 +117,14 @@ public class Game {
 
 	public void setScore(Long score) {
 		this.score = score;
+	}
+
+	public Date getLastResourceUpdate() {
+		return lastResourceUpdate;
+	}
+
+	public void setLastResourceUpdate(Date lastResourceUpdate) {
+		this.lastResourceUpdate = lastResourceUpdate;
 	}
 
 	public Map<ShipType, Integer> getShips() {
@@ -133,17 +161,7 @@ public class Game {
 	
 	public Game()
 	{
-		for (ShipType t : ShipType.values()) {
-			if (!this.getShips().containsKey(t)) {
-				this.getShips().put(t, 0);
-			}
-		}
-
-		for (ConstructionType t : ConstructionType.values()) {
-			if (!this.getConstructions().containsKey(t)) {
-				this.getConstructions().put(t, 0);
-			}
-		}
+		super();
 	}
 
 	@Override

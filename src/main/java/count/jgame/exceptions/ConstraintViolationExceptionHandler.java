@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-@ControllerAdvice(basePackages = {"count.spring.projet1.controllers"})
+@ControllerAdvice(basePackages = {"count.jgame.controllers"})
 public class ConstraintViolationExceptionHandler {
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<ControllerConstraintViolationException> handleConstraintViolation(ConstraintViolationException ex) {
