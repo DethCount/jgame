@@ -10,24 +10,15 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ResearchDeserializer;
 import count.jgame.serialization.ResearchSerializer;
 
 @Entity
 @Table(name = "research_request")
-@JsonIdentityInfo(
-	generator = PropertyGenerator.class, 
-	property = "@id", 
-	resolver = EntityIdResolver.class, 
-	scope = ResearchRequest.class
-)
 public class ResearchRequest extends ProductionRequest
 {	
 	@ManyToOne

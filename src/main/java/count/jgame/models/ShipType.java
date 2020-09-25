@@ -14,30 +14,16 @@ import javax.validation.constraints.NotBlank;
 
 import org.hibernate.validator.constraints.Length;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ResearchKeyDeserializer;
 import count.jgame.serialization.ResearchKeySerializer;
 
 @Entity
 @Table(name = "ship_type")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ShipType.class,
-	resolver = EntityIdResolver.class
-)
-public class ShipType extends AbstractEntity
+public class ShipType extends AbstractNamedEntity
 {
-	@Column(length = 255)
-	@Length(min = 1, max = 255)
-	@NotBlank
-	String name;
-	
 	@ElementCollection
 	@CollectionTable(
 		name = "ship_type_deps_research_level",
@@ -50,14 +36,6 @@ public class ShipType extends AbstractEntity
 	@JsonDeserialize(keyUsing = ResearchKeyDeserializer.class)
 	@JsonSerialize(keyUsing = ResearchKeySerializer.class)
 	Map<Research,Integer> dependsOnResearchLevel = new HashMap<>();
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
 
 	public Map<Research, Integer> getDependsOnResearchLevel() {
 		return dependsOnResearchLevel;

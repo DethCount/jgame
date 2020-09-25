@@ -6,12 +6,20 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
+import count.jgame.serialization.EntityIdResolver;
 
 @MappedSuperclass
+@JsonIdentityInfo(
+	generator = ObjectIdGenerators.PropertyGenerator.class,
+	property = "@id",
+	resolver = EntityIdResolver.class
+)
 public abstract class AbstractEntity
 {
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	Long id;

@@ -6,19 +6,8 @@ import javax.persistence.Entity;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator;
-
-import count.jgame.serialization.EntityIdResolver;
-
 @Entity
 @Table(name = "research_request_observer")
-@JsonIdentityInfo(
-	generator = PropertyGenerator.class,
-	property = "@id",
-	resolver = EntityIdResolver.class,
-	scope = ResearchRequestObserver.class
-)
 public class ResearchRequestObserver extends ProductionRequestObserver
 {	
 	@Column(name = "unit_lead_time")

@@ -12,19 +12,8 @@ import javax.validation.constraints.NotBlank;
 
 import org.hibernate.validator.constraints.Length;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-
-import count.jgame.serialization.EntityIdResolver;
-
 @Entity
 @Table(name = "game")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = Game.class,
-	resolver = EntityIdResolver.class
-)
 public class Game extends AbstractEntity
 {	
 	@Column

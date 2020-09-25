@@ -7,20 +7,9 @@ import javax.persistence.Entity;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-
-import count.jgame.serialization.EntityIdResolver;
-
 @Entity
 @Table(name = "ship_request_observer")
 @DiscriminatorValue("ship")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ShipRequestObserver.class,
-	resolver = EntityIdResolver.class
-)
 public class ShipRequestObserver 
 	extends ProductionRequestObserver 
 {	

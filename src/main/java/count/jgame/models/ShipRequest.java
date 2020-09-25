@@ -11,25 +11,16 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ShipTypeDeserializer;
 import count.jgame.serialization.ShipTypeSerializer;
 
 @Entity
 @Table(name = "ship_request")
 @DiscriminatorValue("ship")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ShipRequest.class,
-	resolver = EntityIdResolver.class
-)
 public class ShipRequest extends ProductionRequest
 {	
 	@ManyToOne

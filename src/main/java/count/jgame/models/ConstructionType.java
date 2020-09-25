@@ -16,36 +16,19 @@ import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
-import javax.validation.constraints.NotBlank;
 
-import org.hibernate.validator.constraints.Length;
-
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ResearchKeyDeserializer;
 import count.jgame.serialization.ResearchKeySerializer;
 
 @Entity
 @Table(name = "construction_type")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ConstructionType.class,
-	resolver = EntityIdResolver.class
-)
-public class ConstructionType extends AbstractEntity
+public class ConstructionType extends AbstractNamedEntity
 {	
-	@Column(length = 255)
-	@Length(min = 1, max = 255)
-	@NotBlank
-	String name;
-	
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "constructionType")
 	@OrderBy("level ASC")
 	@JsonIgnore
@@ -68,14 +51,6 @@ public class ConstructionType extends AbstractEntity
 	@JsonDeserialize(keyUsing = ResearchKeyDeserializer.class)
 	@JsonSerialize(keyUsing = ResearchKeySerializer.class)
 	Map<Research,Integer> dependsOnResearchLevel = new HashMap<>();
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
 
 	public List<ConstructionTypeLevel> getLevels() {
 		return levels;

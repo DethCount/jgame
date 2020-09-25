@@ -12,23 +12,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ResourceTypeKeyDeserializer;
 import count.jgame.serialization.ResourceTypeKeySerializer;
 
 @Entity
 @Table(name = "construction_type_level")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ConstructionTypeLevel.class,
-	resolver = EntityIdResolver.class
-)
 public class ConstructionTypeLevel extends AbstractEntity
 {	
 	@Column

@@ -23,15 +23,12 @@ import javax.persistence.UniqueConstraint;
 import org.hibernate.annotations.Where;
 import org.hibernate.validator.constraints.Length;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import count.jgame.serialization.ConstructionTypeKeyDeserializer;
 import count.jgame.serialization.ConstructionTypeKeySerializer;
-import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ResearchKeyDeserializer;
 import count.jgame.serialization.ResearchKeySerializer;
 import count.jgame.serialization.ShipTypeKeyDeserializer;
@@ -44,16 +41,10 @@ import count.jgame.serialization.ShipTypeKeySerializer;
 		@UniqueConstraint(columnNames = {"id_game", "slug"})
 	}
 )
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = AdministrableLocation.class,
-	resolver = EntityIdResolver.class
-)
 public class AdministrableLocation extends AbstractEntity
 {	
 	@Column(length = 32)
-	@Length(max = 255)
+	@Length(max = 32)
 	String name;
 	
 	@Column(length = 32)

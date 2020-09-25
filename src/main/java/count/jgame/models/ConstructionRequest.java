@@ -11,25 +11,16 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import count.jgame.serialization.ConstructionTypeDeserializer;
 import count.jgame.serialization.ConstructionTypeSerializer;
-import count.jgame.serialization.EntityIdResolver;
 
 @Entity
 @Table(name = "construction_request")
 @DiscriminatorValue("construction")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ConstructionRequest.class,
-	resolver = EntityIdResolver.class
-)
 public class ConstructionRequest extends ProductionRequest
 {
 	@ManyToOne

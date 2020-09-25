@@ -11,30 +11,11 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.validation.constraints.NotBlank;
-
-import org.hibernate.validator.constraints.Length;
-
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-
-import count.jgame.serialization.EntityIdResolver;
 
 @Entity
 @Table(name = "administrable_location_type")
-@JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = AdministrableLocationType.class,
-	resolver = EntityIdResolver.class
-)
-public class AdministrableLocationType extends AbstractEntity
+public class AdministrableLocationType extends AbstractNamedEntity
 {	
-	@Column(length = 255)
-	@Length(min = 1, max = 255)
-	@NotBlank
-	String name;
-	
 	@Column(name = "can_construct_buildings")
 	Boolean canConstructBuildings = false;
 	
@@ -86,14 +67,6 @@ public class AdministrableLocationType extends AbstractEntity
 	)
 	// researches that can be done in this administrable location type
 	List<Research> researches = new ArrayList<>();
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
 
 	public Boolean getCanConstructBuildings() {
 		return canConstructBuildings;
