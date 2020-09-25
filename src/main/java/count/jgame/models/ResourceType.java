@@ -2,9 +2,6 @@ package count.jgame.models;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
 
@@ -19,27 +16,16 @@ import count.jgame.serialization.EntityIdResolver;
 @Table(name = "resource_type")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "id",
+	property = "@id",
 	scope = ResourceType.class,
 	resolver = EntityIdResolver.class
 )
-public class ResourceType {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
-	
+public class ResourceType extends AbstractEntity
+{
 	@Column(length = 255)
 	@Length(min = 1, max = 255)
 	@NotBlank
 	String name;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
 
 	public String getName() {
 		return name;

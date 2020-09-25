@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -13,30 +12,29 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import count.jgame.serialization.ConstructionTypeDeserializer;
-import count.jgame.serialization.ConstructionTypeSerializer;
 import count.jgame.serialization.EntityIdResolver;
+import count.jgame.serialization.ResearchDeserializer;
+import count.jgame.serialization.ResearchSerializer;
 
 @Entity
-@Table(name = "construction_request")
-@DiscriminatorValue("construction")
+@Table(name = "research_request")
 @JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "@id",
-	scope = ConstructionRequest.class,
-	resolver = EntityIdResolver.class
+	generator = PropertyGenerator.class, 
+	property = "@id", 
+	resolver = EntityIdResolver.class, 
+	scope = ResearchRequest.class
 )
-public class ConstructionRequest extends ProductionRequest
-{
+public class ResearchRequest extends ProductionRequest
+{	
 	@ManyToOne
-	@JoinColumn(name = "id_construction_type", referencedColumnName = "id")
-	@JsonDeserialize(using = ConstructionTypeDeserializer.class)
-	@JsonSerialize(using = ConstructionTypeSerializer.class)
-	ConstructionType type;
+	@JoinColumn(name = "id_type", referencedColumnName = "id")
+	@JsonDeserialize(using = ResearchDeserializer.class)
+	@JsonSerialize(using = ResearchSerializer.class)
+	Research type;
 	
 	@Column
 	Integer level;
@@ -44,19 +42,19 @@ public class ConstructionRequest extends ProductionRequest
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
 	@JsonIgnore
 	List<ConstructionRequestObserver> observers;
-	
-	public ConstructionType getType() {
+
+	public Research getType() {
 		return type;
 	}
-	
-	public void setType(ConstructionType type) {
+
+	public void setType(Research type) {
 		this.type = type;
 	}
-	
+
 	public Integer getLevel() {
 		return level;
 	}
-	
+
 	public void setLevel(Integer level) {
 		this.level = level;
 	}
@@ -68,14 +66,13 @@ public class ConstructionRequest extends ProductionRequest
 	public void setObservers(List<ConstructionRequestObserver> observers) {
 		this.observers = observers;
 	}
-	
-	public ConstructionRequest() {
+
+	public ResearchRequest() {
 		super();
 	}
 
-	public ConstructionRequest(AdministrableLocation administrableLocation, ConstructionType type, Integer level) {
+	public ResearchRequest(AdministrableLocation administrableLocation, Research type, Integer level) {
 		super(administrableLocation);
-		
 		this.type = type;
 		this.level = level;
 	}
@@ -83,10 +80,10 @@ public class ConstructionRequest extends ProductionRequest
 	@Override
 	public String toString() {
 		return String.format(
-			"ConstructionRequest [administrableLocationId=%d, type=%s, level=%d]",
+			"ResearchRequest [administrableLocationId=%d, type=%s, level=%d]",
 			this.getAdministrableLocation() == null ? null : this.getAdministrableLocation().getId(),
 			type,
 			level
 		);
-	}
+	}	
 }

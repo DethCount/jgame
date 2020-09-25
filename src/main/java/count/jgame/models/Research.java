@@ -1,73 +1,70 @@
 package count.jgame.models;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyJoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
 
 import org.hibernate.validator.constraints.Length;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import count.jgame.serialization.ConstructionTypeKeyDeserializer;
+import count.jgame.serialization.ConstructionTypeKeySerializer;
 import count.jgame.serialization.EntityIdResolver;
 import count.jgame.serialization.ResearchKeyDeserializer;
 import count.jgame.serialization.ResearchKeySerializer;
 
 @Entity
-@Table(name = "construction_type")
+@Table(name = "research")
 @JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
+	generator = PropertyGenerator.class,
 	property = "@id",
-	scope = ConstructionType.class,
-	resolver = EntityIdResolver.class
+	resolver = EntityIdResolver.class,
+	scope = Research.class
 )
-public class ConstructionType extends AbstractEntity
-{	
+public class Research extends AbstractEntity
+{
 	@Column(length = 255)
 	@Length(min = 1, max = 255)
 	@NotBlank
 	String name;
 	
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "constructionType")
-	@OrderBy("level ASC")
-	@JsonIgnore
-	List<ConstructionTypeLevel> levels = new ArrayList<>();
-	
-	@ManyToOne(optional = true)
-	@JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id")
-	@JsonIdentityReference
-	AdministrableLocationType administrableLocationType;
-	
 	@ElementCollection
 	@CollectionTable(
-		name = "construction_type_deps_research_level",
+		name = "research_deps_research_level",
 		joinColumns = {
-			@JoinColumn(name="id_construction_type", referencedColumnName = "id")
+			@JoinColumn(name="id_child", referencedColumnName = "id")
 		}
 	)
-	@MapKeyJoinColumn(name = "id_research", referencedColumnName = "id")
+	@MapKeyJoinColumn(name = "id_parent", referencedColumnName = "id")
 	@Column(name = "level")
 	@JsonDeserialize(keyUsing = ResearchKeyDeserializer.class)
 	@JsonSerialize(keyUsing = ResearchKeySerializer.class)
 	Map<Research,Integer> dependsOnResearchLevel = new HashMap<>();
+	
+	@ElementCollection
+	@CollectionTable(
+		name = "research_deps_construction_type_level",
+		joinColumns = {
+			@JoinColumn(name="id_research", referencedColumnName = "id")
+		}
+	)
+	@MapKeyJoinColumn(name = "id_construction_type", referencedColumnName = "id")
+	@Column(name = "level")
+	@JsonDeserialize(keyUsing = ConstructionTypeKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ConstructionTypeKeySerializer.class)
+	Map<ConstructionType,Integer> dependsOnConstructionTypeLevel = new HashMap<>();
 
 	public String getName() {
 		return name;
@@ -75,22 +72,6 @@ public class ConstructionType extends AbstractEntity
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public List<ConstructionTypeLevel> getLevels() {
-		return levels;
-	}
-
-	public void setLevels(List<ConstructionTypeLevel> levels) {
-		this.levels = levels;
-	}
-
-	public AdministrableLocationType getAdministrableLocationType() {
-		return administrableLocationType;
-	}
-
-	public void setAdministrableLocationType(AdministrableLocationType administrableLocationType) {
-		this.administrableLocationType = administrableLocationType;
 	}
 
 	public Map<Research, Integer> getDependsOnResearchLevel() {
@@ -101,21 +82,16 @@ public class ConstructionType extends AbstractEntity
 		this.dependsOnResearchLevel = dependsOnResearchLevel;
 	}
 
-	public ConstructionType() {
+	public Research() {
 		super();
 	}
 
-	public ConstructionType(Long id, String name) {
+	public Research(Long id, String name) {
 		super();
 		this.id = id;
 		this.name = name;
 	}
 
-	@Override
-	public String toString() {
-		return "ConstructionType [id=" + id + ", name=" + name + "]";
-	}
-	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {

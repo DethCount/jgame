@@ -5,9 +5,6 @@ import java.util.Date;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
@@ -18,11 +15,8 @@ import com.fasterxml.jackson.annotation.JsonIdentityReference;
 
 @MappedSuperclass
 @DiscriminatorColumn(name = "type")
-abstract public class ProductionRequestObserver{
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
-	
+abstract public class ProductionRequestObserver extends AbstractEntity
+{	
 	@Temporal(TemporalType.TIMESTAMP)
 	Date startedAt;
 	
@@ -36,14 +30,6 @@ abstract public class ProductionRequestObserver{
 	@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")
 	@JsonIdentityReference(alwaysAsId = true)
 	AdministrableLocation administrableLocation;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
 	
 	public Date getStartedAt() {
 		return startedAt;

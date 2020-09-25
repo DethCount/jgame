@@ -68,5 +68,35 @@
     "name": "jgame.game.default-administrable-location.typeId",
     "type": "java.lang.String",
     "description": "A description for 'jgame.game.default-administrable-location.typeId'"
+  },
+  {
+    "name": "jgame.jms.researches.destination",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.researches.destination'"
+  },
+  {
+    "name": "jgame.jms.researches.retryFailed",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.researches.retryFailed'"
+  },
+  {
+    "name": "jgame.jms.researches.failedDestination",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.researches.failedDestination'"
+  },
+  {
+    "name": "jgame.jms.researches.minDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.researches.minDelay'"
+  },
+  {
+    "name": "jgame.jms.researches.retryDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.researches.retryDelay'"
+  },
+  {
+    "name": "jgame.jms.researches.failedDelay",
+    "type": "java.lang.String",
+    "description": "A description for 'jgame.jms.researches.failedDelay'"
   }
 ]}

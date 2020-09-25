@@ -3,14 +3,13 @@ package count.jgame.models;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
 
@@ -25,43 +24,68 @@ import count.jgame.serialization.EntityIdResolver;
 @Table(name = "administrable_location_type")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "id",
+	property = "@id",
 	scope = AdministrableLocationType.class,
 	resolver = EntityIdResolver.class
 )
-public class AdministrableLocationType {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
-	
+public class AdministrableLocationType extends AbstractEntity
+{	
 	@Column(length = 255)
 	@Length(min = 1, max = 255)
 	@NotBlank
 	String name;
 	
+	@Column(name = "can_construct_buildings")
+	Boolean canConstructBuildings = false;
+	
+	@Column(name = "can_build_ships")
+	Boolean canBuildShips = false;
+	
+	@Column(name = "can_do_research")
+	Boolean canDoResearch = false;
+	
+	@OneToMany(
+		mappedBy = "administrableLocationType",
+		cascade = CascadeType.PERSIST
+	)
+	// ConstructionTypes that will be transformed to this type of administrable location type
+	List<ConstructionType> constructionTypes = new ArrayList<>();
+	
 	@ManyToMany
 	@JoinTable(
-		name = "location_resources",
+		name = "administrable_location_type_resources",
 		joinColumns = @JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id"),
 		inverseJoinColumns = @JoinColumn(name = "id_resource_type", referencedColumnName = "id")
 	)
+	// resource types that can be stored in this administrable location type
 	List<ResourceType> resources = new ArrayList<>();
 	
 	@ManyToMany
 	@JoinTable(
-		name = "location_constructions",
+		name = "administrable_location_type_constructions",
 		joinColumns = @JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id"),
 		inverseJoinColumns = @JoinColumn(name = "id_construction_type", referencedColumnName = "id")
 	)
+	// construction types that can be built in this administrable location type
 	List<ConstructionType> constructions = new ArrayList<>();
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
+	
+	@ManyToMany
+	@JoinTable(
+		name = "administrable_location_type_ship_types",
+		joinColumns = @JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id"),
+		inverseJoinColumns = @JoinColumn(name = "id_ship_type", referencedColumnName = "id")
+	)
+	// ship types that can be built in this administrable location type
+	List<ShipType> ships = new ArrayList<>();
+	
+	@ManyToMany
+	@JoinTable(
+		name = "administrable_location_type_research",
+		joinColumns = @JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id"),
+		inverseJoinColumns = @JoinColumn(name = "id_research", referencedColumnName = "id")
+	)
+	// researches that can be done in this administrable location type
+	List<Research> researches = new ArrayList<>();
 
 	public String getName() {
 		return name;
@@ -69,6 +93,38 @@ public class AdministrableLocationType {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public Boolean getCanConstructBuildings() {
+		return canConstructBuildings;
+	}
+
+	public void setCanConstructBuildings(Boolean canConstructBuildings) {
+		this.canConstructBuildings = canConstructBuildings;
+	}
+
+	public Boolean getCanBuildShips() {
+		return canBuildShips;
+	}
+
+	public void setCanBuildShips(Boolean canBuildShips) {
+		this.canBuildShips = canBuildShips;
+	}
+
+	public Boolean getCanDoResearch() {
+		return canDoResearch;
+	}
+
+	public void setCanDoResearch(Boolean canDoResearch) {
+		this.canDoResearch = canDoResearch;
+	}
+
+	public List<ConstructionType> getConstructionTypes() {
+		return constructionTypes;
+	}
+
+	public void setConstructionTypes(List<ConstructionType> constructionTypes) {
+		this.constructionTypes = constructionTypes;
 	}
 
 	public List<ResourceType> getResources() {
@@ -85,6 +141,22 @@ public class AdministrableLocationType {
 
 	public void setConstructions(List<ConstructionType> constructions) {
 		this.constructions = constructions;
+	}
+
+	public List<ShipType> getShips() {
+		return ships;
+	}
+
+	public void setShips(List<ShipType> ships) {
+		this.ships = ships;
+	}
+
+	public List<Research> getResearches() {
+		return researches;
+	}
+
+	public void setResearches(List<Research> researches) {
+		this.researches = researches;
 	}
 
 	public AdministrableLocationType() {

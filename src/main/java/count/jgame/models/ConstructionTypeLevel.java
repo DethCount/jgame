@@ -7,9 +7,6 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyJoinColumn;
@@ -28,15 +25,12 @@ import count.jgame.serialization.ResourceTypeKeySerializer;
 @Table(name = "construction_type_level")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "id",
+	property = "@id",
 	scope = ConstructionTypeLevel.class,
 	resolver = EntityIdResolver.class
 )
-public class ConstructionTypeLevel {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
-	
+public class ConstructionTypeLevel extends AbstractEntity
+{	
 	@Column
 	Integer level;
 	
@@ -69,14 +63,6 @@ public class ConstructionTypeLevel {
 	@JsonDeserialize(keyUsing = ResourceTypeKeyDeserializer.class)
 	@JsonSerialize(keyUsing = ResourceTypeKeySerializer.class)
 	Map<ResourceType, Integer> storage = new HashMap<>();
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
 
 	public Integer getLevel() {
 		return level;

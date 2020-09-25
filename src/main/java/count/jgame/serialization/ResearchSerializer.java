@@ -6,16 +6,14 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import count.jgame.models.ConstructionType;
+import count.jgame.models.Research;
 
-public class ConstructionTypeSerializer extends JsonSerializer<ConstructionType>
+public class ResearchSerializer extends JsonSerializer<Research>
 {
-
 	@Override
-	public void serialize(ConstructionType value, JsonGenerator gen, SerializerProvider serializers)
+	public void serialize(Research value, JsonGenerator gen, SerializerProvider serializers) 
 		throws IOException 
 	{
 		gen.writeString(value.getName());
 	}
-
 }

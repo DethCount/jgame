@@ -2,27 +2,25 @@ package count.jgame.models;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.PropertyGenerator;
 
 import count.jgame.serialization.EntityIdResolver;
 
 @Entity
-@Table(name = "construction_request_observer")
-@DiscriminatorValue("construction")
+@Table(name = "research_request_observer")
 @JsonIdentityInfo(
-	generator = ObjectIdGenerators.PropertyGenerator.class,
+	generator = PropertyGenerator.class,
 	property = "@id",
-	scope = ConstructionRequestObserver.class,
-	resolver = EntityIdResolver.class
+	resolver = EntityIdResolver.class,
+	scope = ResearchRequestObserver.class
 )
-public class ConstructionRequestObserver extends ProductionRequestObserver
-{
+public class ResearchRequestObserver extends ProductionRequestObserver
+{	
 	@Column(name = "unit_lead_time")
 	Double unitLeadTime = 0.0; // temps de production d'une unité en s
 	
@@ -34,7 +32,7 @@ public class ConstructionRequestObserver extends ProductionRequestObserver
 		CascadeType.REFRESH, 
 		CascadeType.REMOVE
 	})
-	ConstructionRequest request;
+	ResearchRequest request;
 
 	public Double getUnitLeadTime() {
 		return unitLeadTime;
@@ -43,32 +41,29 @@ public class ConstructionRequestObserver extends ProductionRequestObserver
 	public void setUnitLeadTime(Double unitLeadTime) {
 		this.unitLeadTime = unitLeadTime;
 	}
-	
-	public ConstructionRequest getRequest() {
+
+	public ResearchRequest getRequest() {
 		return request;
 	}
 
-	public void setRequest(ConstructionRequest request) {
+	public void setRequest(ResearchRequest request) {
 		this.request = request;
-		this.administrableLocation = this.request.getAdministrableLocation();
 	}
 
-	public ConstructionRequestObserver() {
+	public ResearchRequestObserver() {
 		super();
 	}
-	
-	public ConstructionRequestObserver(ConstructionRequest request, Double unitLeadTime) {
+
+	public ResearchRequestObserver(Double unitLeadTime, ResearchRequest request) {
 		super();
-		
-		this.request = request;
-		this.administrableLocation = this.request.getAdministrableLocation();
 		this.unitLeadTime = unitLeadTime;
+		this.request = request;
 	}
 
 	@Override
 	public String toString() {
 		return String.format(
-			"ConstructionRequestObserver [id= %d, request=%s, startedAt=%tc, finishedAt=%tc, unitLeadTime=%f]", 
+			"ResearchRequestObserver [id= %d, request=%s, startedAt=%tc, finishedAt=%tc, unitLeadTime=%f]", 
 			this.getId(),
 			this.request == null ? null : this.request.toString(),
 			startedAt,
@@ -76,4 +71,5 @@ public class ConstructionRequestObserver extends ProductionRequestObserver
 			unitLeadTime
 		);
 	}
+	
 }

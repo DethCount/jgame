@@ -5,9 +5,6 @@ import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
@@ -24,15 +21,12 @@ import count.jgame.serialization.EntityIdResolver;
 @Table(name = "game")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "id",
+	property = "@id",
 	scope = Game.class,
 	resolver = EntityIdResolver.class
 )
-public class Game {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
-	
+public class Game extends AbstractEntity
+{	
 	@Column
 	@Length(min = 1, max = 255)
 	@NotBlank
@@ -44,14 +38,6 @@ public class Game {
 	@OneToMany(mappedBy = "game")
 	@OrderBy("id ASC")
 	List<AdministrableLocation> administrableLocations = new ArrayList<>();
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
 
 	public String getPlayer() {
 		return player;

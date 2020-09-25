@@ -16,6 +16,7 @@ import count.jgame.models.ConstructionType;
 import count.jgame.models.Game;
 import count.jgame.models.ProductionRequest;
 import count.jgame.models.ProductionRequestObserver;
+import count.jgame.models.Research;
 import count.jgame.models.ShipRequest;
 import count.jgame.models.ShipRequestObserver;
 import count.jgame.models.ShipType;
@@ -61,44 +62,76 @@ public class AdministrableLocationService
 	@Autowired
 	private AdministrableLocationRepository repository;
 	
-	public AdministrableLocation getByGameIdAndSlug(Long gameId, String slug)
+	public AdministrableLocation getByGameIdAndPath(Long gameId, String path)
 	{
-		return repository.findByGameIdAndSlug(gameId, slug).get();
+		return repository.findByGameIdAndPath(gameId, path).orElse(null);
 	}
 	
-	public AdministrableLocation preloadByGameIdAndSlug(Long gameId, String slug)
+	public AdministrableLocation preloadByGameIdAndPath(Long gameId, String path)
 	{
-		return repository.preloadByGameIdAndSlug(gameId, slug).get();
+		return repository.preloadByGameIdAndPath(gameId, path).orElse(null);
 	}
 	
 	public AdministrableLocation preloadById(Long id)
 	{
-		return repository.preloadById(id).get();
+		return repository.preloadById(id).orElse(null);
+	}
+	
+	protected void updateSlugAndPath(Long gameId, AdministrableLocation location, String name, Long parentId)
+	{
+		location.setSlug(slugService.get(name));
+		
+		String basePath = "";
+		if (null != parentId) {
+			AdministrableLocation parentLocation = repository.findOneByGameIdAndId(gameId, parentId).orElse(null);
+			if (null == parentLocation) {
+				throw new EntityNotFoundException("Parent location not found");
+			}
+			
+			location.setParent(parentLocation);
+			basePath = parentLocation.getPath() + ":";
+		}
+		
+		location.setPath(basePath + location.getSlug());
+	}
+	
+	public AdministrableLocation save(Game game, AdministrableLocationType type, AdministrableLocation input, Long parentId)
+	{
+		AdministrableLocation location = new AdministrableLocation(null, input.getName(), type, game);
+
+		this.updateSlugAndPath(game.getId(), location, input.getName(), parentId);
+		
+		this.refresh(location, true);
+		
+		return repository.preloadById(location.getId()).orElse(null);
 	}
 	
 	public AdministrableLocation save(Game game, AdministrableLocationType type, AdministrableLocation input)
 	{
-		AdministrableLocation location = new AdministrableLocation(null, input.getName(), type, game);
-		location.setSlug(slugService.get(input.getName()));
-		
-		this.refresh(location, true);
-		
-		return repository.preloadById(location.getId()).get();
+		return this.save(game, type, input, null);
 	}
 	
-	public AdministrableLocation update(Long gameId, String slug, AdministrableLocation input)
+	public AdministrableLocation update(Long gameId, String path, AdministrableLocation input)
 	{
-		AdministrableLocation location = repository.findByGameIdAndSlug(gameId, slug).get();
+		AdministrableLocation location = repository.findByGameIdAndPath(gameId, path).orElse(null);
 		if (null == location) {
 			throw new EntityNotFoundException("Location not found");
 		}
 		
-		location.setName(input.getName());
-		location.setSlug(slugService.get(input.getName()));
+		String oldPath = location.getPath();
+		
+		this.updateSlugAndPath(
+			gameId,
+			location, 
+			input.getName(), 
+			null == location.getParent() ? null : location.getParent().getId()
+		);
+		
+		repository.updatePath(gameId, oldPath, location.getPath());
 		
 		this.refresh(location, true);
 		
-		return repository.preloadById(location.getId()).get();
+		return repository.preloadById(location.getId()).orElse(null);
 	}
 	
 	public AdministrableLocation refresh(AdministrableLocation location, Boolean flush)
@@ -168,8 +201,19 @@ public class AdministrableLocationService
 		if (!location.getConstructions().containsKey(type)) {
 			level = 1;
 		}
+		
+		log.debug("level: {}, constructionType: {}, administrableLocationType: {}", level, type, type.getAdministrableLocationType());
+		
+		if (level == 1 && null != type.getAdministrableLocationType()) {
+			this.save(
+				location.getGame(), 
+				type.getAdministrableLocationType(), 
+				new AdministrableLocation(type.getName()),
+				location.getId()
+			);
+		}
 
-		log.info("building construction {} at level {}", type.getName(), level);
+		log.info("built construction {} at level {}", type.getName(), level);
 		
 		location.getConstructions().put(type, level);
 		
@@ -187,6 +231,31 @@ public class AdministrableLocationService
 		location.getShips().put(type, nb);
 		
 		repository.saveAndFlush(location);
+	}
+
+	public void produceResearch(AdministrableLocation location, Research type, Integer level)
+	{
+		if (!location.getResearches().containsKey(type)) {
+			level = 1;
+		}
+		
+		location.getResearches().put(type, level);
+
+		log.info("researched {} at level {}", type.getName(), level);
+		
+		repository.saveAndFlush(location);
+	}
+
+	public boolean fulfillsConstructionTypeDependencies(Long id, Long constructionTypeId) {
+		return repository.fulfillsConstructionTypeDependencies(id, constructionTypeId);
+	}
+	
+	public boolean fulfillsShipTypeDependencies(Long id, Long shipTypeId) {
+		return repository.fulfillsShipTypeDependencies(id, shipTypeId);
+	}
+	
+	public boolean fulfillsResearchDependencies(Long id, Long researchId) {
+		return repository.fulfillsResearchDependencies(id, researchId);
 	}
 	
 	// @todo

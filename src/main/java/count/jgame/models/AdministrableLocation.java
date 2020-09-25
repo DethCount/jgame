@@ -10,12 +10,8 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.MapKeyColumn;
 import javax.persistence.MapKeyJoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
@@ -36,6 +32,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import count.jgame.serialization.ConstructionTypeKeyDeserializer;
 import count.jgame.serialization.ConstructionTypeKeySerializer;
 import count.jgame.serialization.EntityIdResolver;
+import count.jgame.serialization.ResearchKeyDeserializer;
+import count.jgame.serialization.ResearchKeySerializer;
 import count.jgame.serialization.ShipTypeKeyDeserializer;
 import count.jgame.serialization.ShipTypeKeySerializer;
 
@@ -48,23 +46,29 @@ import count.jgame.serialization.ShipTypeKeySerializer;
 )
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "id",
+	property = "@id",
 	scope = AdministrableLocation.class,
 	resolver = EntityIdResolver.class
 )
-public class AdministrableLocation {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
-	
-	@Column(length = 255)
+public class AdministrableLocation extends AbstractEntity
+{	
+	@Column(length = 32)
 	@Length(max = 255)
 	String name;
 	
-	@Column(length = 255)
-	@Length(min = 1, max = 255)
+	@Column(length = 32)
+	@Length(min = 1, max = 32)
 	String slug;
-
+	
+	@Column(length = 511)
+	@Length(min = 1, max = 511)
+	String path;
+	
+	@ManyToOne(optional = true)
+	@JoinColumn(name = "id_parent")
+	@JsonIdentityReference
+	AdministrableLocation parent;
+	
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "last_resource_update")
 	Date lastResourceUpdate;
@@ -81,7 +85,9 @@ public class AdministrableLocation {
 	@ElementCollection
 	@CollectionTable(
 		name = "administrable_location_ships", 
-		joinColumns = {@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")}
+		joinColumns = {
+			@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")
+		}
 	)
 	@MapKeyJoinColumn(name = "id_ship_type", referencedColumnName = "id")
 	@Column(name = "nb")
@@ -93,14 +99,30 @@ public class AdministrableLocation {
 	@ElementCollection
 	@CollectionTable(
 		name = "administrable_location_constructions", 
-		joinColumns = {@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")}
+		joinColumns = {
+			@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")
+		}
 	)
-	@MapKeyColumn(name = "type")
 	@MapKeyJoinColumn(name = "id_construction_type", referencedColumnName = "id")
+	@Column(name = "level")
 	@OrderBy("id_construction_type ASC")
 	@JsonDeserialize(keyUsing = ConstructionTypeKeyDeserializer.class)
 	@JsonSerialize(keyUsing = ConstructionTypeKeySerializer.class)
 	Map<ConstructionType,Integer> constructions = new HashMap<>();
+	
+	@ElementCollection
+	@CollectionTable(
+		name = "administrable_location_researches", 
+		joinColumns = {
+			@JoinColumn(name = "id_administrable_location", referencedColumnName = "id")
+		}
+	)
+	@MapKeyJoinColumn(name = "id_research", referencedColumnName = "id")
+	@Column(name = "level")
+	@OrderBy("id_research ASC")
+	@JsonDeserialize(keyUsing = ResearchKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ResearchKeySerializer.class)
+	Map<Research,Integer> researches = new HashMap<>();
 	
 	@OneToMany(mappedBy = "administrableLocation")
 	@Where(clause = "status IN ('Running', 'Waiting')")
@@ -111,14 +133,11 @@ public class AdministrableLocation {
 	@Where(clause = "status IN ('Running', 'Waiting')")
 	@OrderBy("id ASC")
 	List<ConstructionRequestObserver> constructionProduction = new ArrayList<>();
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
+	
+	@OneToMany(mappedBy = "administrableLocation")
+	@Where(clause = "status IN ('Running', 'Waiting')")
+	@OrderBy("id ASC")
+	List<ResearchRequestObserver> researchProduction = new ArrayList<>();
 
 	public String getName() {
 		return name;
@@ -134,6 +153,22 @@ public class AdministrableLocation {
 
 	public void setSlug(String slug) {
 		this.slug = slug;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	public AdministrableLocation getParent() {
+		return parent;
+	}
+
+	public void setParent(AdministrableLocation parent) {
+		this.parent = parent;
 	}
 
 	public AdministrableLocationType getType() {
@@ -176,6 +211,14 @@ public class AdministrableLocation {
 		this.constructions = constructions;
 	}
 
+	public Map<Research, Integer> getResearches() {
+		return researches;
+	}
+
+	public void setResearches(Map<Research, Integer> researches) {
+		this.researches = researches;
+	}
+
 	public List<ShipRequestObserver> getShipProduction() {
 		return shipProduction;
 	}
@@ -190,6 +233,14 @@ public class AdministrableLocation {
 
 	public void setConstructionProduction(List<ConstructionRequestObserver> constructionProduction) {
 		this.constructionProduction = constructionProduction;
+	}
+
+	public List<ResearchRequestObserver> getResearchProduction() {
+		return researchProduction;
+	}
+
+	public void setResearchProduction(List<ResearchRequestObserver> researchProduction) {
+		this.researchProduction = researchProduction;
 	}
 
 	public AdministrableLocation()

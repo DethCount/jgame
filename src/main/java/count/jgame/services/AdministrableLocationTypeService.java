@@ -16,4 +16,16 @@ public class AdministrableLocationTypeService
 	{
 		return repository.findById(id).get();
 	}
+
+	public boolean canConstructBuildingType(Long id, Long constructionTypeId) {
+		return repository.canConstructBuildingType(id, constructionTypeId);
+	}
+	
+	public boolean canBuildShipType(Long id, Long shipTypeId) {
+		return repository.canBuildShipType(id, shipTypeId);
+	}
+	
+	public boolean canDoResearch(Long id, Long researchId) {
+		return repository.canDoResearch(id, researchId);
+	}
 }

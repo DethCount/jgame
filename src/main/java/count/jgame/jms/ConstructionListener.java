@@ -16,10 +16,12 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.stereotype.Component;
 
+import count.jgame.exceptions.AbilityException;
 import count.jgame.models.AdministrableLocation;
 import count.jgame.models.ConstructionRequestObserver;
 import count.jgame.models.ConstructionType;
 import count.jgame.services.AdministrableLocationService;
+import count.jgame.services.AdministrableLocationTypeService;
 import count.jgame.services.ConstructionRequestObserverService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +38,9 @@ public class ConstructionListener {
 	
 	@Autowired
 	AdministrableLocationService administrableLocationService;
+	
+	@Autowired
+	AdministrableLocationTypeService administrableLocationTypeService;
 	
 	@Autowired
 	ConstructionRequestObserverService observerService;
@@ -92,6 +97,14 @@ public class ConstructionListener {
 				throw new EntityNotFoundException("Location not found");
 			}
 			
+			if (null == location.getType()) {
+				throw new EntityNotFoundException("Location type not found");
+			}
+			
+			if (!location.getType().getCanConstructBuildings()) {
+				throw new AbilityException(location.getType(), "construct building");
+			}
+			
 			// make sure observer is in db
 			if (null == observer.getId()) {
 				observerService.save(observer);
@@ -127,6 +140,27 @@ public class ConstructionListener {
 				!= location.getConstructions().getOrDefault(observer.getRequest().getType(), 0) + 1
 			) {
 				log.info("cancel: level not next for {}", observer.getId());
+				observer.cancel();
+				observerService.save(observer);
+				return;
+			}
+			
+			// check if current administrable location type allows for this construction type
+			if (!administrableLocationTypeService.canConstructBuildingType(
+				location.getType().getId(),
+				observer.getRequest().getType().getId()
+			)) {
+				log.info("cancel: request type not allowed {}", observer.getId());
+				observer.cancel();
+				observerService.save(observer);
+				return;
+			}
+			
+			if (!administrableLocationService.fulfillsConstructionTypeDependencies(
+				location.getId(),
+				observer.getRequest().getType().getId()
+			)) {
+				log.info("cancel: type dependencies not fulfilled {}", observer.getId());
 				observer.cancel();
 				observerService.save(observer);
 				return;

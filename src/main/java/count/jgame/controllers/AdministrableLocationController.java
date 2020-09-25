@@ -21,38 +21,41 @@ public class AdministrableLocationController {
 	@Autowired
 	private AdministrableLocationService service;
 	
-	@GetMapping(path = "/at/{slug}-{gameId}")
+	@GetMapping(path = "/game/{gameId}/at/{path}")
 	public AdministrableLocation get(
-		@PathVariable("gameId") Long gameId, 
-		@PathVariable("slug") String slug
-	) {
-		return service.preloadByGameIdAndSlug(gameId, slug);
-	}
-	
-	@PutMapping(path = "/at/{slug}-{gameId}", consumes = {MediaType.APPLICATION_JSON_VALUE})
-	@ResponseBody
-	public AdministrableLocation put(
 		@PathVariable("gameId") Long gameId,
-		@PathVariable("slug") String slug,
-		@RequestBody AdministrableLocation input
+		@PathVariable("path") String path
 	) {
-		return service.update(gameId, slug, input);
+		return service.preloadByGameIdAndPath(gameId, path);
 	}
 	
-	@PostMapping(path = "/at/{slug}-{gameId}/build")
+	@PostMapping(path = "/game/{gameId}/at/{path}/build")
 	@ResponseBody
 	public AdministrableLocation pushToProd(
 		@PathVariable("gameId") Long gameId,
-		@PathVariable("slug") String slug,
+		@PathVariable("path") String path,
 		@RequestBody ProductionRequest productionRequest
 	) {
-		AdministrableLocation location = service.getByGameIdAndSlug(gameId, slug);
+		AdministrableLocation location = service.getByGameIdAndPath(gameId, path);
 		if (location == null) {
 			throw new EntityNotFoundException("Location not found");
 		}
 		
 		service.pushToProd(location, productionRequest);
 		
-		return service.preloadByGameIdAndSlug(gameId, slug);
+		return service.preloadById(location.getId());
+	}
+	
+	@PutMapping(
+		path = "/game/{gameId}/at/{path}", 
+		consumes = {MediaType.APPLICATION_JSON_VALUE}
+	)
+	@ResponseBody
+	public AdministrableLocation put(
+		@PathVariable("gameId") Long gameId,
+		@PathVariable("path") String path,
+		@RequestBody AdministrableLocation input
+	) {
+		return service.update(gameId, path, input);
 	}
 }

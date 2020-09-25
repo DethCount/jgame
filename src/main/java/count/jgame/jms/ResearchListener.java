@@ -18,47 +18,45 @@ import org.springframework.stereotype.Component;
 
 import count.jgame.exceptions.AbilityException;
 import count.jgame.models.AdministrableLocation;
-import count.jgame.models.ShipRequestObserver;
-import count.jgame.models.ShipType;
+import count.jgame.models.ResearchRequestObserver;
+import count.jgame.models.Research;
 import count.jgame.services.AdministrableLocationService;
-import count.jgame.services.AdministrableLocationTypeService;
-import count.jgame.services.ShipRequestObserverService;
+import count.jgame.services.ResearchRequestObserverService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class ShipyardListener {
+public class ResearchListener
+{
 	final String DESTINATION;
 	final String FAILED_DESTINATION;
 	final Boolean RETRY_FAILED;
-	final Integer MIN_DELAY;
-	final Integer RETRY_DELAY;
-	final Integer FAILED_DELAY;
+	
+	final Integer MIN_DELAY; // ms
+	final Integer RETRY_DELAY; // ms
+	final Integer FAILED_DELAY; // ms
 	
 	@Autowired
 	AdministrableLocationService administrableLocationService;
 	
 	@Autowired
-	AdministrableLocationTypeService administrableLocationTypeService;
-	
-	@Autowired
-	ShipRequestObserverService observerService;
+	ResearchRequestObserverService observerService;
 	
 	@Autowired
 	JmsTemplate jmsTemplate;
 	
-	ShipyardListener(
-		@Value("${jgame.jms.shipyard.destination:Shipyard}")
+	ResearchListener(
+		@Value("${jgame.jms.researches.destination:Researches}")
 		String destination,
-		@Value("${jgame.jms.shipyard.failedDestination:Shipyard_FAILED}")
+		@Value("${jgame.jms.researches.failedDestination:Researches_FAILED}")
 		String failedDestination,
-		@Value("${jgame.jms.shipyard.retryFailed:false}")
+		@Value("${jgame.jms.researches.retryFailed:false}")
 		Boolean retryFailed,
-		@Value("${jgame.jms.shipyard.minDelay:100}")
+		@Value("${jgame.jms.researches.minDelay:100}")
 		Integer minDelay,
-		@Value("${jgame.jms.shipyard.retryDelay:1000}")
+		@Value("${jgame.jms.researches.retryDelay:1000}")
 		Integer retryDelay,
-		@Value("${jgame.jms.shipyard.failedDelay:2000}")
+		@Value("${jgame.jms.researches.failedDelay:2000}")
 		Integer failedDelay
 	) {
 		DESTINATION = destination;
@@ -67,11 +65,24 @@ public class ShipyardListener {
 		MIN_DELAY = minDelay;
 		RETRY_DELAY = retryDelay;
 		FAILED_DELAY = failedDelay;
+		
+		log.info(
+			"ResearchListener starting with config: destination: {}"
+				+ ", failedDestination: {}, retryFailed: {}, minDelay: {}"
+				+ ", retryDelay: {}, failedDelay: {}",
+			DESTINATION,
+			FAILED_DELAY,
+			RETRY_FAILED,
+			MIN_DELAY,
+			RETRY_DELAY,
+			FAILED_DELAY
+		);
 	}
 	
-	@JmsListener(destination = "${jgame.jms.shipyard.destination:Shipyard}")
-	void handleRequest(ShipRequestObserver observer) {
-		log.info("ShipyardListener called: {}", observer.toString());
+	@JmsListener(destination = "${game.jms.researches.destination:Researches}")
+	void handleRequest(ResearchRequestObserver observer)
+	{
+		log.info("ResearchListener called: {}", observer.toString());
 		try {
 			// retrieve and check game
 			AdministrableLocation location = administrableLocationService
@@ -87,8 +98,8 @@ public class ShipyardListener {
 				throw new EntityNotFoundException("Location type not found");
 			}
 			
-			if (!location.getType().getCanBuildShips()) {
-				throw new AbilityException(location.getType(), "build ships");
+			if (!location.getType().getCanDoResearch()) {
+				throw new AbilityException(location.getType(), "do research");
 			}
 			
 			// make sure observer is in db
@@ -96,12 +107,13 @@ public class ShipyardListener {
 				observerService.save(observer);
 			}
 
-			// wait for existing constructions for this game
+			// wait for existing researches
 			
-			List<ShipRequestObserver> currentProduction = observerService
+			List<ResearchRequestObserver> currentProduction = observerService
 				.getBlocking(
 					location.getId(),
-					observer.getId()
+					observer.getId(),
+					observer.getRequest().getLevel()
 				);
 			
 			log.debug("prod en cours: {}, observer: {}", currentProduction.size(), observer.getId());
@@ -112,29 +124,25 @@ public class ShipyardListener {
 				retry(observer, (int)(observer.getUnitLeadTime() * 1000));
 				return;
 			}
-
-			// check if current administrable location type allows for this construction type
-			if (!administrableLocationTypeService.canBuildShipType(
-				location.getType().getId(),
-				observer.getRequest().getType().getId()
-			)) {
-				log.info("cancel: request type not allowed {}", observer.getId());
+			
+			// check requested level
+			
+			log.debug(
+				"{} VS {}", 
+				observer.getRequest().toString(),
+				location.getResearches().getOrDefault(observer.getRequest().getType(), 0) + 1
+			);
+			
+			if (observer.getRequest().getLevel() 
+				!= location.getResearches().getOrDefault(observer.getRequest().getType(), 0) + 1
+			) {
+				log.info("cancel: level not next for {}", observer.getId());
 				observer.cancel();
 				observerService.save(observer);
 				return;
 			}
 			
-			if (!administrableLocationService.fulfillsShipTypeDependencies(
-				location.getId(),
-				observer.getRequest().getType().getId()
-			)) {
-				log.info("cancel: type dependencies not fulfilled {}", observer.getId());
-				observer.cancel();
-				observerService.save(observer);
-				return;
-			}
-			
-			// if not started, start and retry after construction
+			// if not started, start and retry after research time
 			
 			if (null == observer.getStartedAt()) {
 				observer.start();
@@ -143,29 +151,23 @@ public class ShipyardListener {
 				return;
 			}
 			
-			// check if construction should have been done
+			// check if research should have been done
 			
 			Date now = new Date();
 			
-			Integer shouldHaveDone 
-				= Math.min(
-					observer.getRequest().getNb(),
-					(int)(
-						((now.getTime() - observer.getStartedAt().getTime()) / 1000.0)
+			Integer shouldHaveDone = Math.min(
+				1, 
+				(int)(
+					((now.getTime() - observer.getStartedAt().getTime()) / 1000.0)
 						/ observer.getUnitLeadTime()
-					)
 				)
-				- observer.getNbDone();
+			);
 			
 			log.debug("shouldHaveDone: {}", shouldHaveDone);
 			
 			if (shouldHaveDone > 0) {
-				// update game with new construction
+				// update game with new research
 				this.produce(location, observer, shouldHaveDone);
-				
-				if (observer.getFinishedAt() == null) {
-					retry(observer, (int)(observer.getUnitLeadTime() * 1000));
-				}
 			} else {
 				// retry in 1/10th of lead time
 				retry(observer, (int)(observer.getUnitLeadTime() * 100));
@@ -176,11 +178,11 @@ public class ShipyardListener {
 			observer.fail();
 			retryFailed(observer);
 		} finally {
-			log.debug("ShipyardListener end: {}", observer.toString());
+			log.debug("ResearchListener end: {}", observer.toString());
 		}
 	}
 	
-	void retry(ShipRequestObserver observer, String destination, Integer delay) 
+	void retry(ResearchRequestObserver observer, String destination, Integer delay) 
 		throws JmsException 
 	{
 		delay = Math.max(MIN_DELAY, delay);
@@ -202,17 +204,17 @@ public class ShipyardListener {
 		});
 	}
 	
-	void retry(ShipRequestObserver observer, Integer delay)
+	void retry(ResearchRequestObserver observer, Integer delay)
 	{
 		this.retry(observer, DESTINATION, delay);
 	}
 	
-	void retry(ShipRequestObserver observer)
+	void retry(ResearchRequestObserver observer)
 	{
 		this.retry(observer, DESTINATION, RETRY_DELAY);
 	}
 
-	void retryFailed(ShipRequestObserver observer)
+	void retryFailed(ResearchRequestObserver observer)
 	{
 		if (!this.RETRY_FAILED) {
 			return;
@@ -221,19 +223,15 @@ public class ShipyardListener {
 		this.retry(observer, FAILED_DESTINATION, FAILED_DELAY);
 	}
 	
-	void produce(AdministrableLocation location, ShipRequestObserver observer, Integer nbProduced)
+	void produce(AdministrableLocation location, ResearchRequestObserver observer, Integer nbProduced)
 	{
-		ShipType type = observer.getRequest().getType();
-		Integer nb = nbProduced;
+		Research type = observer.getRequest().getType();
+		Integer level = observer.getRequest().getLevel();
 		
-		administrableLocationService.produceShip(location, type, nb);
-		
-		observer.setNbDone(observer.getNbDone() + nbProduced);
-		
-		if (observer.getNbDone() >= observer.getRequest().getNb()) {
-			observer.finish();
-		}
-		
+		administrableLocationService.produceResearch(location, type, level);
+
+		observer.finish();
 		observerService.save(observer);
 	}
 }
+

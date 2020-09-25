@@ -26,7 +26,7 @@ import count.jgame.serialization.ShipTypeSerializer;
 @DiscriminatorValue("ship")
 @JsonIdentityInfo(
 	generator = ObjectIdGenerators.PropertyGenerator.class,
-	property = "id",
+	property = "@id",
 	scope = ShipRequest.class,
 	resolver = EntityIdResolver.class
 )
