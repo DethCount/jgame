@@ -1,7 +1,7 @@
 package count.jgame.models;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,7 +26,7 @@ public class Game extends AbstractEntity
 	
 	@OneToMany(mappedBy = "game")
 	@OrderBy("id ASC")
-	List<AdministrableLocation> administrableLocations = new ArrayList<>();
+	Set<AdministrableLocation> administrableLocations = new LinkedHashSet<>();
 
 	public String getPlayer() {
 		return player;
@@ -44,11 +44,11 @@ public class Game extends AbstractEntity
 		this.score = score;
 	}
 	
-	public List<AdministrableLocation> getAdministrableLocations() {
+	public Set<AdministrableLocation> getAdministrableLocations() {
 		return administrableLocations;
 	}
 
-	public void setAdministrableLocations(List<AdministrableLocation> administrableLocations) {
+	public void setAdministrableLocations(Set<AdministrableLocation> administrableLocations) {
 		this.administrableLocations = administrableLocations;
 	}
 

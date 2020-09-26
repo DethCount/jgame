@@ -3,6 +3,7 @@ package count.jgame.models;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -21,6 +22,7 @@ public class ResearchRequestObserver extends ProductionRequestObserver
 		CascadeType.REFRESH, 
 		CascadeType.REMOVE
 	})
+	@JoinColumn(name = "id_request")
 	ResearchRequest request;
 
 	public Double getUnitLeadTime() {

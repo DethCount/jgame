@@ -1,6 +1,8 @@
 package count.jgame.services;
 
+import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +27,9 @@ public class GameService {
 	@Autowired
 	private AdministrableLocationService administrableLocationService;
 	
+	@Autowired
+	private EntityManager mainEntityManager;
+	
 	final String DEFAULT_ADMINISTRABLE_LOCATION_NAME;
 	final Long DEFAULT_ADMINISTRABLE_LOCATION_TYPE_ID;
 	
@@ -46,6 +51,7 @@ public class GameService {
 		return repository.preloadGame(id).orElse(null);
 	}
 	
+	@Transactional
 	public Game save(Game input) {
 		Game game = new Game();
 		game.setPlayer(input.getPlayer());
@@ -70,7 +76,7 @@ public class GameService {
 		
 		game.getAdministrableLocations().add(defaultLocation);
 		
-		return repository.preloadGame(game.getId()).get();
+		return game;
 	}
 
 	public Game update(Long id, Game input)

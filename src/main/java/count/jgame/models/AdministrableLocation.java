@@ -10,6 +10,7 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyJoinColumn;
@@ -73,7 +74,7 @@ public class AdministrableLocation extends AbstractEntity
 	@JsonIdentityReference(alwaysAsId = true)
 	Game game;
 	
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(
 		name = "administrable_location_ships", 
 		joinColumns = {
@@ -87,7 +88,7 @@ public class AdministrableLocation extends AbstractEntity
 	@JsonSerialize(keyUsing = ShipTypeKeySerializer.class)
 	Map<ShipType,Integer> ships = new HashMap<>();
 
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(
 		name = "administrable_location_constructions", 
 		joinColumns = {

@@ -4,6 +4,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -23,6 +24,7 @@ public class ConstructionRequestObserver extends ProductionRequestObserver
 		CascadeType.REFRESH, 
 		CascadeType.REMOVE
 	})
+	@JoinColumn(name = "id_request")
 	ConstructionRequest request;
 
 	public Double getUnitLeadTime() {

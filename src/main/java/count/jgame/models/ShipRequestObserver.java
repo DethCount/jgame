@@ -4,6 +4,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -19,7 +20,15 @@ public class ShipRequestObserver
 	@Column(name = "unit_lead_time")
 	Double unitLeadTime = 0.0; // temps de production d'une unité en s
 	
-	@OneToOne(cascade = CascadeType.ALL)
+	@OneToOne(cascade = {
+		CascadeType.ALL,
+		CascadeType.PERSIST,
+		CascadeType.DETACH,
+		CascadeType.MERGE,
+		CascadeType.REFRESH,
+		CascadeType.REMOVE
+	})
+	@JoinColumn(name = "id_request")
 	ShipRequest request;
 
 	public Integer getNbDone() {

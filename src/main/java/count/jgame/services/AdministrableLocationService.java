@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import count.jgame.exceptions.UnknownProductionRequestException;
 import count.jgame.models.AdministrableLocation;
@@ -29,15 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class AdministrableLocationService
-{
-	@Autowired
-	private ConstructionTypeService constructionTypeService;
-
-	@Autowired
-	private ShipTypeService shipTypeService;
-	
+{	
 	@Autowired
 	private SlugService slugService;
+	
+	@Autowired
+	private AdministrableLocationTypeService typeService;
 	
 	@Autowired
 	private ConstructionRequestObserverRepository constructionRequestObserverRepository;
@@ -95,22 +93,30 @@ public class AdministrableLocationService
 		location.setPath(basePath + location.getSlug());
 	}
 	
+	@Transactional
 	public AdministrableLocation save(Game game, AdministrableLocationType type, AdministrableLocation input, Long parentId)
 	{
 		AdministrableLocation location = new AdministrableLocation(null, input.getName(), type, game);
-
+		repository.saveAndFlush(location);
+		
 		this.updateSlugAndPath(game.getId(), location, input.getName(), parentId);
+		
+		typeService.addTypeDefaults(location);
+		
+		repository.saveAndFlush(location);
 		
 		this.refresh(location, true);
 		
-		return repository.preloadById(location.getId()).orElse(null);
+		return location;
 	}
 	
+	@Transactional
 	public AdministrableLocation save(Game game, AdministrableLocationType type, AdministrableLocation input)
 	{
 		return this.save(game, type, input, null);
 	}
 	
+	@Transactional
 	public AdministrableLocation update(Long gameId, String path, AdministrableLocation input)
 	{
 		AdministrableLocation location = repository.findByGameIdAndPath(gameId, path).orElse(null);
@@ -137,20 +143,6 @@ public class AdministrableLocationService
 	public AdministrableLocation refresh(AdministrableLocation location, Boolean flush)
 	{	
 		// @todo calculate resource productions
-		
-		// @todo get ship types by administrable location type
-		for (ShipType t : shipTypeService.getAll()) {
-			if (!location.getShips().containsKey(t)) {
-				location.getShips().put(t, 0);
-			}
-		}
-
-		// @todo get construction types by administrable location type
-		for (ConstructionType t : constructionTypeService.getAll()) {
-			if (!location.getConstructions().containsKey(t)) {
-				location.getConstructions().put(t, 0);
-			}
-		}
 		
 		// @todo calculate stats
 		
@@ -196,6 +188,7 @@ public class AdministrableLocationService
 		jmsTemplate.convertAndSend(queueName, observer);
 	}
 	
+	@Transactional
 	public void produceConstruction(AdministrableLocation location, ConstructionType type, Integer level)
 	{
 		if (!location.getConstructions().containsKey(type)) {

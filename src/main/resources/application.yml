@@ -17,6 +17,7 @@ logging:
     count: DEBUG
     org.springframework: INFO
     org.springframework.web: DEBUG
+    org.springframework.transaction: TRACE
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 

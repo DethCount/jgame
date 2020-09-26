@@ -1,5 +1,7 @@
 package count.jgame;
 
+import java.util.Map;
+
 import javax.persistence.EntityManager;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.repository.support.Repositories;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import count.jgame.models.AdministrableLocationType;
 import count.jgame.models.ConstructionType;
@@ -79,6 +82,44 @@ public class MysqlGameDesignLoader implements CommandLineRunner {
 			(ConstructionTypeRepository)
 			this.repositories.getRepositoryFor(ConstructionType.class).get()
 		);
+
+		log.info("Mysql game design finished loading");
+	}
+
+	interface LevelGenerator {
+		public Integer getValueFromLevel(Integer level, Integer prev);
+	}
+	
+	interface LevelMapAccess<K,V> {
+		public Map<K,V> getMap(ConstructionTypeLevel level);
+	}
+	
+	protected void createLevel(
+		ConstructionTypeLevelRepository repository,
+		LevelMapAccess<ResourceType, Integer> propertyAccess,
+		LevelGenerator lvlGenerator,
+		Integer initValue,
+		Long typeId,
+		Long resourceTypeId
+	) {
+
+		Integer value = initValue;
+		for (int lvl = 1; lvl <= 100; lvl++) {
+			ConstructionTypeLevel metalMineLvl = new ConstructionTypeLevel(
+				null,
+				lvl,
+				mainEntityManager.getReference(ConstructionType.class, typeId)
+			);
+			
+			value = lvlGenerator.getValueFromLevel(lvl, value);
+			
+			propertyAccess.getMap(metalMineLvl)
+				.put(mainEntityManager.getReference(ResourceType.class, resourceTypeId), value);
+			
+			repository.save(metalMineLvl);
+		}
+		
+		repository.flush();
 	}
 
 	public void initResourceType(ResourceTypeRepository repository)
@@ -115,7 +156,7 @@ public class MysqlGameDesignLoader implements CommandLineRunner {
 		repository.save(new ConstructionType(3l, "SiciliciumMine"));
 		repository.save(new ConstructionType(4l, "DeuteriumMine"));
 		repository.save(new ConstructionType(5l, "MetalWarehouse"));
-		repository.save(new ConstructionType(6l, "CrystalWarehouse"));
+		repository.save(new ConstructionType(6l, "SiliciumWarehouse"));
 		repository.save(new ConstructionType(7l, "DeuteriumWarehouse"));
 		repository.save(new ConstructionType(8l, "SolarPanels"));
 		repository.save(new ConstructionType(9l, "PowerPlant"));
@@ -132,7 +173,7 @@ public class MysqlGameDesignLoader implements CommandLineRunner {
 		
 		repository.save(new ConstructionType(19l, "MilitaryBase"));
 		repository.save(new ConstructionType(20l, "Radar")); // permet d'etre alerté avant attaque 
-		repository.save(new ConstructionType(21l, "MissileLanchers"));
+		repository.save(new ConstructionType(21l, "MissileLaunchers"));
 		repository.save(new ConstructionType(22l, "LaserTurets"));
 		repository.save(new ConstructionType(23l, "DefensiveSatelliteArray"));
 		repository.save(new ConstructionType(24l, "PlanetShield"));
@@ -170,109 +211,16 @@ public class MysqlGameDesignLoader implements CommandLineRunner {
 	}
 	
 	public void initConstructionTypeLevel(ConstructionTypeLevelRepository repository)
-	{	
-		Double value = 10.0;
-		for (int lvl = 1; lvl <= 100; lvl++) {
-			ConstructionTypeLevel metalMineLvl = new ConstructionTypeLevel(
-				null,
-				lvl,
-				mainEntityManager.getReference(ConstructionType.class, 1l)
-			);
-			
-			metalMineLvl.getProductions().put(mainEntityManager.getReference(ResourceType.class, 1l), value);
-			
-			repository.save(metalMineLvl);
-			
-			value += Math.sqrt(lvl);
-		}
+	{
+		LevelMapAccess<ResourceType,Integer> mineProd = (mine) -> mine.getProductions();
+		LevelMapAccess<ResourceType,Integer> storage = (warehouse) -> warehouse.getStorage();
 		
-		repository.flush();
-		
-		value = 5.0;
-		for (int lvl = 1; lvl <= 100; lvl++) {
-			ConstructionTypeLevel siliciumMineLvl = new ConstructionTypeLevel(
-				null,
-				lvl,
-				mainEntityManager.getReference(ConstructionType.class, 2l)
-			);
-			
-			siliciumMineLvl.getProductions().put(mainEntityManager.getReference(ResourceType.class, 2l), value);
-			
-			repository.save(siliciumMineLvl);
-			
-			value += Math.sqrt(lvl);
-		}
-		
-		repository.flush();
-		
-		value = 1.0;
-		for (int lvl = 1; lvl <= 100; lvl++) {
-			ConstructionTypeLevel deuteriumMineLvl = new ConstructionTypeLevel(
-				null,
-				lvl,
-				mainEntityManager.getReference(ConstructionType.class, 3l)
-			);
-			
-			deuteriumMineLvl.getProductions().put(mainEntityManager.getReference(ResourceType.class, 3l), value);
-			
-			repository.save(deuteriumMineLvl);
-			
-			value += lvl;
-		}
-		
-		repository.flush();
-		
-		value = 1000.0;
-		for (int lvl = 1; lvl <= 100; lvl++) {
-			ConstructionTypeLevel metalWarehouseLvl = new ConstructionTypeLevel(
-				null,
-				lvl,
-				mainEntityManager.getReference(ConstructionType.class, 4l)
-			);
-			
-			metalWarehouseLvl.getStorage().put(mainEntityManager.getReference(ResourceType.class, 1l), value.intValue());
-			
-			repository.save(metalWarehouseLvl);
-			
-			value *= 1.25;
-		}
-		
-		repository.flush();
-		
-		value = 500.0;
-		for (int lvl = 1; lvl <= 100; lvl++) {
-			ConstructionTypeLevel siliciumWarehouseLvl = new ConstructionTypeLevel(
-				null,
-				lvl,
-				mainEntityManager.getReference(ConstructionType.class, 5l)
-			);
-			
-			siliciumWarehouseLvl.getStorage().put(mainEntityManager.getReference(ResourceType.class, 2l), value.intValue());
-			
-			repository.save(siliciumWarehouseLvl);
-			
-			value *= 1.7;
-		}
-		
-		repository.flush();
-		
-
-		value = 200.0;
-		for (int lvl = 1; lvl <= 100; lvl++) {
-			ConstructionTypeLevel deuteriumWarehouseLvl = new ConstructionTypeLevel(
-				null,
-				lvl,
-				mainEntityManager.getReference(ConstructionType.class, 6l)
-			);
-			
-			deuteriumWarehouseLvl.getStorage().put(mainEntityManager.getReference(ResourceType.class, 3l), value.intValue());
-			
-			repository.save(deuteriumWarehouseLvl);
-			
-			value *= 1.5;
-		}
-		
-		repository.flush();
+		this.createLevel(repository, mineProd, (lvl, prev) -> prev + (int) Math.round(Math.sqrt(lvl)), 10, 1l, 1l);
+		this.createLevel(repository, mineProd, (lvl, prev) -> prev + (int) Math.round(Math.sqrt(lvl)), 5, 2l, 2l);
+		this.createLevel(repository, mineProd, (lvl, prev) -> prev + lvl, 1, 3l, 3l);
+		this.createLevel(repository, storage, (lvl, prev) -> (int) Math.round(prev * 1.25), 1000, 4l, 1l);
+		this.createLevel(repository, storage, (lvl, prev) -> (int) Math.round(prev * 1.7), 500, 5l, 2l);
+		this.createLevel(repository, storage, (lvl, prev) -> (int) Math.round(prev * 1.5), 200, 6l, 3l);
 	}
 	
 	public void initShipType(ShipTypeRepository repository)
@@ -316,67 +264,79 @@ public class MysqlGameDesignLoader implements CommandLineRunner {
 	
 	public void initAdministrableLocationType(AdministrableLocationTypeRepository repository)
 	{	
-		AdministrableLocationType planet = new AdministrableLocationType(1l, "Planet");
-		planet.setCanConstructBuildings(true);
-		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 1l));
-		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 11l));
-		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 19l));
-		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 25l));
-		planet.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 38l));
+		AdministrableLocationType type;
 		
-		repository.save(planet);
+		type = new AdministrableLocationType(1l, "Planet");
+		type.setCanConstructBuildings(true);
+		repository.saveAndFlush(type);
+		repository.addConstruction(type.getId(), 1l);
+		repository.addConstruction(type.getId(), 11l);
+		repository.addConstruction(type.getId(), 19l);
+		repository.addConstruction(type.getId(), 25l);
+		repository.addConstruction(type.getId(), 38l);
 		
+		type = new AdministrableLocationType(2l, "StategicComplex");
+		type.setCanConstructBuildings(true);
+		repository.saveAndFlush(type);
+		repository.addConstruction(type.getId(), 2l);
+		repository.addConstruction(type.getId(), 3l);
+		repository.addConstruction(type.getId(), 4l);
+		repository.addConstruction(type.getId(), 5l);
+		repository.addConstruction(type.getId(), 6l);
+		repository.addConstruction(type.getId(), 7l);
+		repository.addConstruction(type.getId(), 8l);
+		repository.addConstruction(type.getId(), 9l);
+		repository.addConstruction(type.getId(), 10l);
 		
-		AdministrableLocationType shipyard = new AdministrableLocationType(2l, "Shipyard");
-		shipyard.setCanBuildShips(true);
-
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 1l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 2l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 3l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 4l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 5l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 6l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 7l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 8l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 9l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 10l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 11l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 12l));
-		shipyard.getShips().add(mainEntityManager.getReference(ShipType.class, 13l));
+		type = new AdministrableLocationType(3l, "Shipyard");
+		type.setCanBuildShips(true);
+		repository.saveAndFlush(type);
+		repository.addShip(type.getId(), 1l);
+		repository.addShip(type.getId(), 2l);
+		repository.addShip(type.getId(), 3l);
+		repository.addShip(type.getId(), 4l);
+		repository.addShip(type.getId(), 5l);
+		repository.addShip(type.getId(), 6l);
+		repository.addShip(type.getId(), 7l);
+		repository.addShip(type.getId(), 8l);
+		repository.addShip(type.getId(), 9l);
+		repository.addShip(type.getId(), 10l);
+		repository.addShip(type.getId(), 11l);
+		repository.addShip(type.getId(), 12l);
+		repository.addShip(type.getId(), 13l);
 		
-		repository.save(shipyard);
+		type = new AdministrableLocationType(4l, "Laboratory");
+		type.setCanDoResearch(true);
+		repository.saveAndFlush(type);
 		
-		AdministrableLocationType laboratory = new AdministrableLocationType(3l, "Laboratory");
-		laboratory.setCanDoResearch(true);
-		repository.save(laboratory);
-		
-		AdministrableLocationType spaceStation = new AdministrableLocationType(4l, "SpaceStation");
-		spaceStation.setCanDoResearch(true);
-		spaceStation.setCanConstructBuildings(true);
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 39l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 40l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 41l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 42l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 43l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 44l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 45l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 46l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 47l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 48l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 49l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 50l));
-		spaceStation.getConstructions().add(mainEntityManager.getReference(ConstructionType.class, 51l));
-		spaceStation.getResearches().add(mainEntityManager.getReference(Research.class, 12l));
-		repository.save(spaceStation);
+		type = new AdministrableLocationType(5l, "SpaceStation");
+		type.setCanDoResearch(true);
+		type.setCanConstructBuildings(true);
+		repository.saveAndFlush(type);
+		repository.addConstruction(type.getId(), 39l);
+		repository.addConstruction(type.getId(), 40l);
+		repository.addConstruction(type.getId(), 41l);
+		repository.addConstruction(type.getId(), 42l);
+		repository.addConstruction(type.getId(), 43l);
+		repository.addConstruction(type.getId(), 44l);
+		repository.addConstruction(type.getId(), 45l);
+		repository.addConstruction(type.getId(), 46l);
+		repository.addConstruction(type.getId(), 47l);
+		repository.addConstruction(type.getId(), 48l);
+		repository.addConstruction(type.getId(), 49l);
+		repository.addConstruction(type.getId(), 50l);
+		repository.addConstruction(type.getId(), 51l);
+		repository.addResearch(type.getId(), 12l);
 		
 		repository.flush();
 	}
 	
 	public void initConstructionTypeAdministrableLocationType(ConstructionTypeRepository repository)
 	{
-		repository.updateAdministrableLocationType(10l, 2l);
-		repository.updateAdministrableLocationType(11l, 3l);
-		repository.updateAdministrableLocationType(38l, 4l);
+		repository.updateAdministrableLocationType(1l, 2l);
+		repository.updateAdministrableLocationType(12l, 3l);
+		repository.updateAdministrableLocationType(13l, 4l);
+		repository.updateAdministrableLocationType(38l, 5l);
 		
 		repository.flush();
 	}

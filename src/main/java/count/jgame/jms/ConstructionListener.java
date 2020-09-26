@@ -15,6 +15,7 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import count.jgame.exceptions.AbilityException;
 import count.jgame.models.AdministrableLocation;
@@ -247,6 +248,7 @@ public class ConstructionListener {
 		this.retry(observer, FAILED_DESTINATION, FAILED_DELAY);
 	}
 	
+	@Transactional
 	void produce(AdministrableLocation location, ConstructionRequestObserver observer, Integer nbProduced)
 	{
 		ConstructionType type = observer.getRequest().getType();

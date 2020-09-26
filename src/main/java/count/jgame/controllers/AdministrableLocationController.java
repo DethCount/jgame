@@ -26,7 +26,13 @@ public class AdministrableLocationController {
 		@PathVariable("gameId") Long gameId,
 		@PathVariable("path") String path
 	) {
-		return service.preloadByGameIdAndPath(gameId, path);
+		AdministrableLocation location = service.preloadByGameIdAndPath(gameId, path);
+		
+		if (null == location) {
+			throw new EntityNotFoundException("Location not found");
+		}
+		
+		return location;
 	}
 	
 	@PostMapping(path = "/game/{gameId}/at/{path}/build")

@@ -31,7 +31,7 @@ public class ConstructionTypeLevel extends AbstractEntity
 	
 	@ElementCollection
 	@CollectionTable(
-		name = "construction_type_level_productions", 
+		name = "construction_type_level_production", 
 		joinColumns = {
 			@JoinColumn(name = "id_construction_type_level", referencedColumnName = "id")
 		}
@@ -40,7 +40,7 @@ public class ConstructionTypeLevel extends AbstractEntity
 	@Column(name = "value")
 	@JsonDeserialize(keyUsing = ResourceTypeKeyDeserializer.class)
 	@JsonSerialize(keyUsing = ResourceTypeKeySerializer.class)
-	Map<ResourceType, Double> productions = new HashMap<>();
+	Map<ResourceType, Integer> productions = new HashMap<>();
 	
 	@ElementCollection
 	@CollectionTable(
@@ -71,11 +71,11 @@ public class ConstructionTypeLevel extends AbstractEntity
 		this.constructionType = constructionType;
 	}
 
-	public Map<ResourceType, Double> getProductions() {
+	public Map<ResourceType, Integer> getProductions() {
 		return productions;
 	}
 
-	public void setProductions(Map<ResourceType, Double> productions) {
+	public void setProductions(Map<ResourceType, Integer> productions) {
 		this.productions = productions;
 	}
 

@@ -2,7 +2,10 @@ package count.jgame.repositories;
 
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import count.jgame.models.AdministrableLocation;
@@ -14,6 +17,10 @@ public interface AdministrableLocationRepository extends JpaRepository<Administr
 		+ " left join fetch al.type alt"
 		+ " left join fetch al.constructions c"
 		+ " left join fetch al.ships s"
+		+ " left join fetch al.researches r"
+		+ " left join fetch alt.constructions tc"
+		+ " left join fetch alt.ships ts"
+		+ " left join fetch alt.researches tr"
 		+ " where al.id = :id"
 	)
 	Optional<AdministrableLocation> preloadById(Long id);
@@ -23,6 +30,10 @@ public interface AdministrableLocationRepository extends JpaRepository<Administr
 		+ " left join fetch al.type alt"
 		+ " left join fetch al.constructions c"
 		+ " left join fetch al.ships s"
+		+ " left join fetch al.researches r"
+		+ " left join fetch alt.constructions tc"
+		+ " left join fetch alt.ships ts"
+		+ " left join fetch alt.researches tr"
 		+ " where al.game.id = :gameId"
 			+ " and al.path = :path"
 	)
@@ -32,6 +43,8 @@ public interface AdministrableLocationRepository extends JpaRepository<Administr
 	
 	Optional<AdministrableLocation> findOneByGameIdAndId(Long gameId, Long id);
 	
+	@Transactional
+	@Modifying(clearAutomatically = true)
 	@Query(
 		"update AdministrableLocation al"
 		+ " set path = FUNCTION('REPLACE', al.path, :oldPath, :newPath)"

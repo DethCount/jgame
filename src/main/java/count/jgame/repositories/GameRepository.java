@@ -12,6 +12,16 @@ import count.jgame.models.Game;
 @Component
 public interface GameRepository extends JpaRepository<Game, Long> {
 	
-	@Query("select g from Game g left join fetch g.administrableLocations al where g.id = :id")
+	@Query("select g"
+		+ " from Game g"
+		+ " left join fetch g.administrableLocations al"
+		+ " left join fetch al.type alt"
+		+ " left join fetch al.constructions c"
+		+ " left join fetch al.ships s"
+		+ " left join fetch al.researches r"
+		+ " left join fetch alt.constructions tc"
+		+ " left join fetch alt.ships ts"
+		+ " left join fetch alt.researches tr"
+		+ " where g.id = :id")
 	Optional<Game> preloadGame(@Param("id") Long id);
 }

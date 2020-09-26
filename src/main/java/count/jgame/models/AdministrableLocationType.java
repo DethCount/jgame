@@ -1,7 +1,7 @@
 package count.jgame.models;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -30,7 +30,7 @@ public class AdministrableLocationType extends AbstractNamedEntity
 		cascade = CascadeType.PERSIST
 	)
 	// ConstructionTypes that will be transformed to this type of administrable location type
-	List<ConstructionType> constructionTypes = new ArrayList<>();
+	Set<ConstructionType> constructionTypes = new LinkedHashSet<>();
 	
 	@ManyToMany
 	@JoinTable(
@@ -39,7 +39,7 @@ public class AdministrableLocationType extends AbstractNamedEntity
 		inverseJoinColumns = @JoinColumn(name = "id_resource_type", referencedColumnName = "id")
 	)
 	// resource types that can be stored in this administrable location type
-	List<ResourceType> resources = new ArrayList<>();
+	Set<ResourceType> resources = new LinkedHashSet<>();
 	
 	@ManyToMany
 	@JoinTable(
@@ -48,25 +48,25 @@ public class AdministrableLocationType extends AbstractNamedEntity
 		inverseJoinColumns = @JoinColumn(name = "id_construction_type", referencedColumnName = "id")
 	)
 	// construction types that can be built in this administrable location type
-	List<ConstructionType> constructions = new ArrayList<>();
+	Set<ConstructionType> constructions = new LinkedHashSet<>();
 	
 	@ManyToMany
 	@JoinTable(
-		name = "administrable_location_type_ship_types",
+		name = "administrable_location_type_ships",
 		joinColumns = @JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id"),
 		inverseJoinColumns = @JoinColumn(name = "id_ship_type", referencedColumnName = "id")
 	)
 	// ship types that can be built in this administrable location type
-	List<ShipType> ships = new ArrayList<>();
+	Set<ShipType> ships = new LinkedHashSet<>();
 	
 	@ManyToMany
 	@JoinTable(
-		name = "administrable_location_type_research",
+		name = "administrable_location_type_researches",
 		joinColumns = @JoinColumn(name = "id_administrable_location_type", referencedColumnName = "id"),
 		inverseJoinColumns = @JoinColumn(name = "id_research", referencedColumnName = "id")
 	)
 	// researches that can be done in this administrable location type
-	List<Research> researches = new ArrayList<>();
+	Set<Research> researches = new LinkedHashSet<>();
 
 	public Boolean getCanConstructBuildings() {
 		return canConstructBuildings;
@@ -92,43 +92,43 @@ public class AdministrableLocationType extends AbstractNamedEntity
 		this.canDoResearch = canDoResearch;
 	}
 
-	public List<ConstructionType> getConstructionTypes() {
+	public Set<ConstructionType> getConstructionTypes() {
 		return constructionTypes;
 	}
 
-	public void setConstructionTypes(List<ConstructionType> constructionTypes) {
+	public void setConstructionTypes(Set<ConstructionType> constructionTypes) {
 		this.constructionTypes = constructionTypes;
 	}
 
-	public List<ResourceType> getResources() {
+	public Set<ResourceType> getResources() {
 		return resources;
 	}
 
-	public void setResources(List<ResourceType> resources) {
+	public void setResources(Set<ResourceType> resources) {
 		this.resources = resources;
 	}
 
-	public List<ConstructionType> getConstructions() {
+	public Set<ConstructionType> getConstructions() {
 		return constructions;
 	}
 
-	public void setConstructions(List<ConstructionType> constructions) {
+	public void setConstructions(Set<ConstructionType> constructions) {
 		this.constructions = constructions;
 	}
 
-	public List<ShipType> getShips() {
+	public Set<ShipType> getShips() {
 		return ships;
 	}
 
-	public void setShips(List<ShipType> ships) {
+	public void setShips(Set<ShipType> ships) {
 		this.ships = ships;
 	}
 
-	public List<Research> getResearches() {
+	public Set<Research> getResearches() {
 		return researches;
 	}
 
-	public void setResearches(List<Research> researches) {
+	public void setResearches(Set<Research> researches) {
 		this.researches = researches;
 	}
 

@@ -36,7 +36,6 @@ public class ConstructionTypeKeyDeserializer extends KeyDeserializer
 		}
 		
 		ConstructionType constructionType = repository.findOneByName(key).get();
-		System.err.println(constructionType.toString());
 		
 		return constructionType;
 	}
