@@ -12,6 +12,11 @@ public class ResourceTypeKeySerializer extends JsonSerializer<ResourceType>{
 
 	@Override
 	public void serialize(ResourceType value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+		if (value.getVisible() == false) {
+			gen.writeOmittedField("hidden");
+			return;
+		}
+		
 		gen.writeFieldName(value.getName());
 	}
 

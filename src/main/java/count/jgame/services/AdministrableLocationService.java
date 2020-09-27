@@ -18,11 +18,14 @@ import count.jgame.models.Game;
 import count.jgame.models.ProductionRequest;
 import count.jgame.models.ProductionRequestObserver;
 import count.jgame.models.Research;
+import count.jgame.models.ResearchRequest;
+import count.jgame.models.ResearchRequestObserver;
 import count.jgame.models.ShipRequest;
 import count.jgame.models.ShipRequestObserver;
 import count.jgame.models.ShipType;
 import count.jgame.repositories.AdministrableLocationRepository;
 import count.jgame.repositories.ConstructionRequestObserverRepository;
+import count.jgame.repositories.ResearchRequestObserverRepository;
 import count.jgame.repositories.ShipRequestObserverRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,17 +47,23 @@ public class AdministrableLocationService
 	private ShipRequestObserverRepository shipRequestObserverRepository;
 	
 	@Autowired
+	private ResearchRequestObserverRepository researchRequestObserverRepository;
+
+	@Autowired
 	JmsTemplate jmsTemplate;
 	
 	final String SHIPYARD_QUEUE_NAME;
 	final String CONSTRUCTIONS_QUEUE_NAME;
+	final String RESEARCH_QUEUE_NAME;
 	
 	AdministrableLocationService(
 			@Value("${jgame.jms.shipyard.destination:Shipyard}") String shipyardQueueName,
-			@Value("${jgame.jms.constructions.destination:Constructions}") String constructionsQueueName
+			@Value("${jgame.jms.constructions.destination:Constructions}") String constructionsQueueName,
+			@Value("${jgame.jms.researches.destination:Researches}") String researchQueueName
 	) {
 		SHIPYARD_QUEUE_NAME = shipyardQueueName;
 		CONSTRUCTIONS_QUEUE_NAME = constructionsQueueName;
+		RESEARCH_QUEUE_NAME = researchQueueName;
 	}
 	
 	@Autowired
@@ -180,6 +189,17 @@ public class AdministrableLocationService
 			constructionRequestObserverRepository.saveAndFlush((ConstructionRequestObserver) observer);
 			
 			queueName = this.CONSTRUCTIONS_QUEUE_NAME;
+		} else if (productionRequest instanceof ResearchRequest) {
+			Double unitLeadTime = 15.0;
+			
+			observer = new ResearchRequestObserver(
+				(ResearchRequest) productionRequest,
+				unitLeadTime
+			);
+			
+			researchRequestObserverRepository.saveAndFlush((ResearchRequestObserver) observer);
+			
+			queueName = this.RESEARCH_QUEUE_NAME;
 		} else {
 			throw new UnknownProductionRequestException(productionRequest.getClass().getSimpleName());
 		}

@@ -45,7 +45,7 @@ public class ResearchRequestObserver extends ProductionRequestObserver
 		super();
 	}
 
-	public ResearchRequestObserver(Double unitLeadTime, ResearchRequest request) {
+	public ResearchRequestObserver(ResearchRequest request, Double unitLeadTime) {
 		super();
 		this.unitLeadTime = unitLeadTime;
 		this.request = request;

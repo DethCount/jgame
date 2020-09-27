@@ -9,4 +9,6 @@ import count.jgame.models.ResourceType;
 public interface ResourceTypeRepository extends JpaRepository<ResourceType, Long>
 {
 	Optional<ResourceType> findOneByName(String name);
+
+	Optional<ResourceType> findOneByNameAndVisible(String key, Boolean visible);
 }

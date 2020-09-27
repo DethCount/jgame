@@ -29,6 +29,6 @@ public class ResourceTypeKeyDeserializer extends KeyDeserializer
 			return null;
 		}
 		
-		return repository.findOneByName(key).get();
+		return repository.findOneByNameAndVisible(key, true).orElse(null);
 	}
 }

@@ -31,6 +31,19 @@ public class ConstructionTypeLevel extends AbstractEntity
 	
 	@ElementCollection
 	@CollectionTable(
+		name = "construction_type_level_consumptions", 
+		joinColumns = {
+			@JoinColumn(name = "id_construction_type_level", referencedColumnName = "id")
+		}
+	)
+	@MapKeyJoinColumn(name = "id_resource_type", referencedColumnName = "id")
+	@Column(name = "value")
+	@JsonDeserialize(keyUsing = ResourceTypeKeyDeserializer.class)
+	@JsonSerialize(keyUsing = ResourceTypeKeySerializer.class)
+	Map<ResourceType, Integer> consumptions = new HashMap<>();
+	
+	@ElementCollection
+	@CollectionTable(
 		name = "construction_type_level_production", 
 		joinColumns = {
 			@JoinColumn(name = "id_construction_type_level", referencedColumnName = "id")
@@ -69,6 +82,14 @@ public class ConstructionTypeLevel extends AbstractEntity
 
 	public void setConstructionType(ConstructionType constructionType) {
 		this.constructionType = constructionType;
+	}
+
+	public Map<ResourceType, Integer> getConsumptions() {
+		return consumptions;
+	}
+
+	public void setConsumptions(Map<ResourceType, Integer> consumptions) {
+		this.consumptions = consumptions;
 	}
 
 	public Map<ResourceType, Integer> getProductions() {
