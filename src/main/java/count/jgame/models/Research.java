@@ -77,7 +77,7 @@ public class Research extends AbstractNamedEntity
             return false;
         }
         
-		return this.getId() == ((ConstructionType) obj).getId();
+		return this.getId() == ((Research) obj).getId();
 	}
 	
 	@Override

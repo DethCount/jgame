@@ -39,6 +39,7 @@ public class ResearchRequestObserver extends ProductionRequestObserver
 
 	public void setRequest(ResearchRequest request) {
 		this.request = request;
+		this.administrableLocation = this.request.getAdministrableLocation();
 	}
 
 	public ResearchRequestObserver() {
